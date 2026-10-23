@@ -18,7 +18,10 @@
     "route:trucks": "node scripts/route-trucks.mjs",
     "build:satellite": "node scripts/build-satellite.mjs",
     "build:title": "node scripts/build-title-art.mjs",
-    "build:model-texture": "node scripts/build-model-texture.mjs"
+    "build:model-texture": "node scripts/build-model-texture.mjs",
+    "build:grid": "node scripts/build-grid.mjs",
+    "test": "node --test",
+    "build:sim-reports": "node scripts/build-sim-reports.mjs"
   },
   "license": "MIT",
   "dependencies": {
