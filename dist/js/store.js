@@ -28,6 +28,7 @@ export const store = {
   setPersona(id) { state.persona = id; save(); },
   nextSeq() { state.seq = (state.seq || 0) + 1; save(); return state.seq; },
   upsertTask(t) { const i = state.tasks.findIndex(x => x.id === t.id); i >= 0 ? state.tasks[i] = t : state.tasks.push(t); save(); },
+  clearReports() { state.reports = []; save(); },
   addReports(list) { const ids = new Set(state.reports.map(r => r.id)); for (const r of list) if (!ids.has(r.id)) state.reports.push(r); save(); },
   exportAll() { return { format: KEY, exportedAt: new Date().toISOString(), tasks: state.tasks, reports: state.reports, params: state.params }; },
   importAll(obj) {

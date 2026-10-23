@@ -186,6 +186,9 @@ fieldset{border:0;margin:0;padding:0;min-width:0}
 .rel.in{background:#f6d5cc;color:#8a2a1c}
 .ntext{font-size:.82rem;line-height:1.6}
 label.btn{display:inline-flex;align-items:center}
+.report-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:240px;overflow-y:auto;font-size:.8rem}
+.report-list li{display:flex;gap:8px;align-items:flex-start;line-height:1.45}
+.report-list .k{display:block;color:var(--text-3);font-size:.72rem}
 @media (max-width:720px){
   #topbar{top:8px;right:8px}
   .card{top:8px;right:8px;left:8px;width:auto;max-height:40vh}
@@ -272,7 +275,29 @@ label.btn{display:inline-flex;align-items:center}
     <div class="foot">任務可編輯、可取消，不能刪除；每次修改都記錄身分與欄位。已取消的任務不進模型。</div>
   </div>
   <div role="tabpanel" id="pane-reports" class="pane" hidden>
-    <p class="muted">回報清單與匯入（Phase 4 開發中）。</p>
+    <section>
+      <h2>鼠種 <span class="count">近 30 天 <span id="report-window"></span></span></h2>
+      <div class="row"><label for="sp-norway"><span class="chip" style="background:#c0392b"></span>溝鼠 <span class="count" data-sp-count="norway"></span></label><span class="switch"><input type="checkbox" id="sp-norway" data-sp="norway" checked><i></i></span></div>
+      <div class="row"><label for="sp-roof"><span class="chip" style="background:#8e6bbf"></span>屋頂鼠 <span class="count" data-sp-count="roof"></span></label><span class="switch"><input type="checkbox" id="sp-roof" data-sp="roof"><i></i></span></div>
+      <div class="row"><label for="sp-house"><span class="chip" style="background:#2f86c4"></span>小家鼠 <span class="count" data-sp-count="house"></span></label><span class="switch"><input type="checkbox" id="sp-house" data-sp="house"><i></i></span></div>
+      <div class="row"><label for="sp-unknown"><span class="chip" style="background:#8a939b"></span>不確定 <span class="count" data-sp-count="unknown"></span></label><span class="switch"><input type="checkbox" id="sp-unknown" data-sp="unknown"><i></i></span></div>
+      <div class="row"><label for="t-reports"><span class="chip" style="background:var(--text-3)"></span>在模型上顯示回報點</label><span class="switch"><input type="checkbox" id="t-reports" checked><i></i></span></div>
+      <p class="hint">只有溝鼠回報會提高族群估計（依距離遞減、隨時間消退）；其他鼠種只顯示點位。</p>
+    </section>
+    <section>
+      <h2>最近回報</h2>
+      <ul id="report-list" class="report-list"></ul>
+    </section>
+    <section>
+      <h2>匯入 <span class="count">已匯入 <span id="report-imported">0</span> 筆</span></h2>
+      <div class="actions">
+        <label class="btn primary">匯入 JSON<input type="file" id="report-file" accept=".json,application/json" hidden></label>
+        <button class="btn" type="button" id="btn-report-sample">下載範例</button>
+        <button class="btn" type="button" id="btn-report-clear">移除匯入</button>
+      </div>
+      <p id="report-msg" class="hint" role="status"></p>
+    </section>
+    <div class="foot">預載的 600 筆回報為<b>模擬資料</b>：依環境因子推估的承載量產生，非真實通報。</div>
   </div>
 </aside>
 

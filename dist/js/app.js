@@ -8,6 +8,7 @@ import { createVillages, CLASS_LABELS, classOf } from './villages.js';
 import { renderCard } from './card.js';
 import { createTasks } from './tasks.js';
 import { openNotify } from './notify.js';
+import { createReports } from './reports.js';
 import { PERSONAS } from './params.js';
 import { $, taipeiToday } from './util.js';
 
@@ -73,6 +74,7 @@ async function main() {
       scene.setHeat(heatCanvas, gridMeta.bounds);
     }
     if (villages.selected) renderCard(app, villages.selected);
+    reportsUI?.paint();
   }
 
   // ---------- 里：近距離時 hover 顯示里、點擊開資訊卡；遠距離維持行政區（點擊飛至該區） ----------
@@ -120,6 +122,7 @@ async function main() {
   document.querySelectorAll('[role=tab]').forEach(b => b.addEventListener('click', () => app.setTab(b.dataset.tab)));
   app.openNotify = (t) => openNotify(app, t);
   const tasks = app.taskUI = createTasks(app);
+  const reportsUI = app.reportsUI = createReports(app);
   app.newTask = (codes) => tasks.newTask(codes);
   app.openTask = (id) => tasks.openTask(id);
   const sel = $('persona');
