@@ -94,7 +94,12 @@ scripts/fetch-raptor.mjs 鳳頭蒼鷹紀錄（GBIF + iNaturalist）
 scripts/fetch-petition.mjs 陳情系統 119 個月下載與每月彙整
 scripts/geocode.py     地址 → 座標（門牌位置資料比對）
 scripts/merge_food.py  三份餐飲清單去重合併
+scripts/build-grid.mjs 管理工具用 100 m 因子網格 + 里界 → dist/data/{grid.json, grid.bin, villages.geojson}
+scripts/build-sim-reports.mjs 模擬回報（固定亂數種子）→ dist/data/reports_sim.json
 dist/index.html        單頁應用（deck.gl，無 bundler）
+dist/model.html        立體模型＋防治管理工具（three.js，ES modules 在 dist/js/）
+dist/js/engine.js      族群模型（純函式，test/ 以 node --test 驗證）
+test/                  npm test
 ```
 
 ## 立體模型頁（three.js，`dist/model.html`）
@@ -109,6 +114,23 @@ npm run serve                 # http://localhost:3000/model.html
 - **頂面貼圖**：Copernicus Sentinel-2 L2A 真彩色（10 m，與遊戲衛星底圖同一景）重投影到經緯度格網；以臺北市都市計畫使用分區圖（細部計畫 SHP，`raw/city3d/zoning_detail.zip`，屬性 Big5、座標 TWD97）分成山林、公園綠地、水域、機場、市區，街廓之間未覆蓋的空隙視為道路；各類以「亮度 → 色階」重新著色，保留衛星明暗細節。
 - **地形**：沿用 `terrain.png`（內政部 20 m DEM，高度 ×1.6）。
 - **光線**：太陽方位對齊衛星拍攝時間（1 月上午，東南偏南、仰角約 38°），即時陰影與影像中的山影一致。
-- **熱區**：低熱度完全透明，中高熱度以橘到深紅覆蓋，透明度可調。
+- **熱區**：改為族群模型結果（見下節）；低值透明，中高值以橘到深紅覆蓋，透明度可調。
 - 標示：Contains modified Copernicus Sentinel data 2025；臺北市都市計畫使用分區圖（都市發展局，政府資料開放授權條款第 1 版）。
 - 已知限制：臺北市建物 SHP（建管處）只有近年建照約 1 萬筆，不足以還原全市建物量體，目前未擠出建物；國土測繪中心三維建物模型的臺北市部分需向市府申請。
+
+## 防治管理工具（黑客松 MVP，`dist/model.html`）
+
+規格與每項決定見 `docs/mvp-tool-spec.md`。
+
+```bash
+npm run build:grid           # 100 m 因子網格 + 456 里界（需先 npm run build）
+npm run build:sim-reports    # 600 筆模擬回報（過去 90 天）
+npm test                     # 模型引擎與匯入驗證測試
+npm run serve                # http://localhost:3000/model.html （?today=2026-10-24 可固定 demo 日期）
+```
+
+- **族群模型**（`dist/js/engine.js`）：全市 26,841 格（100 m）。承載量 K 由六項環境因子經高斯擴散、正規化、飽和後加權；族群 N 以 logistic 逐日朝 K 回升；任務扣 N 或降 K，被移除族群的一部分外溢到範圍外環帶（依 K 分配）；溝鼠回報在估計值上加成，依距離遞減、依半衰期消退。從 90 天前的平衡狀態推算到未來 30 天。
+- **介面**：左側「圖層｜任務｜回報」分頁、底部時間軸、右側里資訊卡與任務表單、右上身分選單與設定抽屜。拉近後點里看詳情；編輯任務時點里可加入或移出範圍。
+- **參數來源**：設定抽屜每個參數標示文獻編號或「假設」，文獻清單見 `dist/js/params.js` 的 `SOURCES`。
+- **儲存**：任務、匯入回報、設定、里長聯絡資料存在瀏覽器 localStorage，可匯出／匯入 JSON。僅供 demo。
+- **已知限制**：回報為模擬資料；身分只記錄不限制權限，稽核紀錄存在本機可被清除（正式版應接臺北通或公務帳號、伺服器端不可修改的稽核紀錄）；里長姓名電話無開放資料，需自行匯入；民眾通知只產生清單與公告稿，不實際發送。

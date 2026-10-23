@@ -293,7 +293,8 @@ label.btn{display:inline-flex;align-items:center}
     <div class="actions"><button class="btn primary" type="button" id="btn-new-task">＋ 新增任務</button>
       <select id="task-filter" aria-label="篩選任務"><option value="open">未結案</option><option value="all">全部</option><option value="planned">規劃中</option><option value="active">執行中</option><option value="done">已完成</option><option value="cancelled">已取消</option></select></div>
     <ul id="task-list" class="task-list"></ul>
-    <div class="foot">任務可編輯、可取消，不能刪除；每次修改都記錄身分與欄位。已取消的任務不進模型。</div>
+    <div class="actions"><button class="btn" type="button" id="btn-audit">匯出稽核紀錄 CSV</button></div>
+    <div class="foot">任務可編輯、可取消，不能刪除；每次修改都記錄身分與欄位。已取消的任務不進模型。<br>Demo 的身分只做記錄、不限制權限，紀錄存在本機瀏覽器、可被清除。正式版應接臺北通或公務帳號，依角色授權，稽核紀錄寫入伺服器且不可修改。</div>
   </div>
   <div role="tabpanel" id="pane-reports" class="pane" hidden>
     <section>

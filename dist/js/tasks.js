@@ -2,7 +2,7 @@
 import { TASK_TYPES, BAITS, EXECUTORS, NOTIFY_METHODS, clone } from './params.js';
 import { STATUS } from './card.js';
 import { TASK_COLORS } from './timeline.js';
-import { store } from './store.js';
+import { store, download } from './store.js';
 import { $, esc } from './util.js';
 
 const get = (o, path) => path.split('.').reduce((a, k) => a?.[k], o);
@@ -254,6 +254,14 @@ export function createTasks(app) {
   function newTask(codes) { open(newDraft(codes), true); }
   function openTask(id) { const t = store.tasks.find(x => x.id === id); if (t) open(t, false); }
   function close() { draft = null; form.hidden = true; villages.setScope([]); renderList(); }
+
+  // 稽核紀錄匯出（全部任務的建立／修改／取消）
+  $('btn-audit').addEventListener('click', () => {
+    const rows = store.tasks.flatMap(t => (t.history || []).map(h => [tpeTime(h.at), h.byName, h.by, t.caseNo, TASK_TYPES[t.type], { create: '建立', edit: '修改', cancel: '取消' }[h.action] || h.action, h.summary]));
+    rows.sort((a, b) => a[0].localeCompare(b[0]));
+    const cell = (v) => { v = String(v ?? ''); if (/^[=+\-@]/.test(v)) v = "'" + v; return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+    download(`稽核紀錄_${app.today}.csv`, '\ufeff' + [['時間（臺北）', '身分', '身分代碼', '案號', '類型', '動作', '內容'], ...rows].map(r => r.map(cell).join(',')).join('\r\n'), 'text/csv;charset=utf-8');
+  });
 
   renderList();
   return { newTask, openTask, close, toggleVillage, renderList, get editing() { return draft; } };
