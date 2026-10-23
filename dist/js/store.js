@@ -3,7 +3,7 @@
 import { mergeParams } from './params.js';
 
 const KEY = 'taipei-rat-tool/v1';
-const empty = () => ({ tasks: [], reports: [], params: null, persona: null, seq: 0 });
+const empty = () => ({ tasks: [], reports: [], params: null, persona: null, seq: 0, contacts: {} });
 
 function read() {
   try { const s = JSON.parse(localStorage.getItem(KEY)); return s && typeof s === 'object' ? { ...empty(), ...s } : empty(); }
@@ -20,6 +20,8 @@ export const store = {
   get tasks() { return state.tasks; },
   get reports() { return state.reports; },
   get persona() { return state.persona; },
+  get contacts() { return state.contacts || {}; },          // 村里代碼 → { chief, phone }（使用者匯入，僅存本機）
+  setContacts(c) { state.contacts = c; save(); },
   get saveOk() { return saveOk; },
   params() { return mergeParams(state.params); },
   setParams(p) { state.params = p; save(); },

@@ -6,6 +6,9 @@ import { createTimeline } from './timeline.js';
 import { store } from './store.js';
 import { createVillages, CLASS_LABELS, classOf } from './villages.js';
 import { renderCard } from './card.js';
+import { createTasks } from './tasks.js';
+import { openNotify } from './notify.js';
+import { PERSONAS } from './params.js';
 import { $, taipeiToday } from './util.js';
 
 const classOfIndex = (v) => classOf(v, 'index');
@@ -16,12 +19,13 @@ const RANGE = [-90, 30];
 try { await main(); } catch (e) { $('loading').textContent = '載入失敗：' + e.message; console.error(e); }
 
 async function main() {
-  const [scene, gridMeta, gridBuf, simReports, villageFc] = await Promise.all([
+  const [scene, gridMeta, gridBuf, simReports, villageFc, raptor] = await Promise.all([
     createScene(),
     fetch('data/grid.json').then(r => r.json()),
     fetch('data/grid.bin').then(r => r.arrayBuffer()),
     fetch('data/reports_sim.json').then(r => r.json()),
     fetch('data/villages.geojson').then(r => r.json()),
+    fetch('data/raptor.json').then(r => r.json()),
   ]);
   const G = E.makeGrid(gridMeta, gridBuf);
   const app = {
@@ -29,6 +33,8 @@ async function main() {
     env: null, sim: null, day: 0, heatMode: 'index',
     get tasks() { return store.tasks; },
     get reports() { return [...simReports.reports, ...store.reports]; },
+    get persona() { return PERSONAS.find(p => p.id === store.persona) || PERSONAS[0]; },
+    raptorPts: raptor.points, boundaryVersion: gridMeta.boundaryVersion, E,
   };
   const geoCache = new Map();
   const villages = app.villages = createVillages(scene, G, villageFc);
@@ -77,11 +83,13 @@ async function main() {
     villages.setHover(code);
     if (!code) return null;
     const k = G.vIndex.get(code) - 1, v = app.byVillage[k];
-    return villages.tipHtml(code, `族群指數 ${v.toFixed(0)}（${CLASS_LABELS.index[classOfIndex(v)]}）· 點擊看詳情`);
+    const action = tasks.editing ? (tasks.editing.scope.villages.includes(code) ? '點擊移出任務範圍' : '點擊加入任務範圍') : '點擊看詳情';
+    return villages.tipHtml(code, `族群指數 ${v.toFixed(0)}（${CLASS_LABELS.index[classOfIndex(v)]}）· ${action}`);
   };
   scene.hooks.click = (ll) => {
     const code = ll && scene.camDist() < NEAR ? villages.codeAt(ll) : null;
     if (!code) return false;
+    if (tasks.editing) return tasks.toggleVillage(code);    // 編輯任務時：點里 = 加入／移出範圍
     app.selectVillage(code); return true;
   };
   addEventListener('keydown', e => { if (e.key === 'Escape' && villages.selected) app.selectVillage(null); });
@@ -103,6 +111,21 @@ async function main() {
     $('ramp-index').hidden = app.heatMode !== 'index'; $('ramp-change').hidden = app.heatMode !== 'change';
     redraw();
   }));
+
+  // ---------- 左側分頁、任務、通知、身分 ----------
+  app.setTab = (name) => {
+    document.querySelectorAll('[role=tab]').forEach(b => { const on = b.dataset.tab === name; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
+    document.querySelectorAll('[role=tabpanel]').forEach(p => { p.hidden = p.id !== 'pane-' + name; });
+  };
+  document.querySelectorAll('[role=tab]').forEach(b => b.addEventListener('click', () => app.setTab(b.dataset.tab)));
+  app.openNotify = (t) => openNotify(app, t);
+  const tasks = app.taskUI = createTasks(app);
+  app.newTask = (codes) => tasks.newTask(codes);
+  app.openTask = (id) => tasks.openTask(id);
+  const sel = $('persona');
+  sel.innerHTML = PERSONAS.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  sel.value = app.persona.id;
+  sel.addEventListener('change', () => store.setPersona(sel.value));
 
   recomputeEnv();
   $('loading').classList.add('done');

@@ -79,3 +79,13 @@ export function mergeParams(saved) {
   if (saved) walk(out, saved);
   return out;
 }
+
+// demo 身分：只記錄誰建立／修改，不限制權限（正式版接臺北通或公務帳號，依角色授權）
+export const PERSONAS = [
+  { id: 'epb-vector', name: '環保局水質病媒管制科 承辦人', org: '環保局' },
+  { id: 'team-wanhua', name: '萬華區清潔隊 分隊長', org: '萬華區清潔隊' },
+  { id: 'market-office', name: '市場處 管理員', org: '市場處' },
+  { id: 'vendor-demo', name: '外包除鼠廠商（示範）', org: '外包廠商' },
+];
+export const EXECUTORS = { team: '區清潔隊', vector: '環保局水質病媒管制科', market: '市場處', vendor: '外包除鼠公司', other: '其他' };
+export const NOTIFY_METHODS = { board: '里辦公處公告', flyer: '張貼公告／傳單', sms: '簡訊', app: '臺北通推播（規劃中）' };

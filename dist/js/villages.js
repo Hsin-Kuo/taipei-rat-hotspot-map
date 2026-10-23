@@ -38,15 +38,25 @@ export function createVillages(scene, G, fc) {
   // 外框：hover（白）與選取（綠）
   const hoverMat = scene.lineMat(0xffffff, 2.5), selMat = scene.lineMat(0x1f7a46, 4);
   const cache = new Map();
-  const outline = (code, mat) => { const key = code + (mat === selMat ? ':s' : ':h'); if (!cache.has(key)) { const o = scene.geoOutline(byCode.get(code).geometry, mat); o.visible = false; cache.set(key, o); } return cache.get(key); };
+  const outline = (code, mat) => { const key = code + (mat === selMat ? ':s' : mat === scopeMat ? ':o' : ':h'); if (!cache.has(key)) { const o = scene.geoOutline(byCode.get(code).geometry, mat); o.visible = false; cache.set(key, o); } return cache.get(key); };
   let hoverCode = null, selCode = null;
   function setHover(code) { if (code === hoverCode) return; if (hoverCode) outline(hoverCode, hoverMat).visible = false; hoverCode = code; if (code && code !== selCode) outline(code, hoverMat).visible = true; }
   function setSelected(code) { if (selCode) outline(selCode, selMat).visible = false; selCode = code; if (code) { if (hoverCode === code) outline(code, hoverMat).visible = false; outline(code, selMat).visible = true; } }
+
+  // 任務範圍：編輯中任務的里以橘色外框標示
+  const scopeMat = scene.lineMat(0xe8572c, 3);
+  let scopeCodes = new Set();
+  function setScope(codes) {
+    const next = new Set(codes || []);
+    for (const c of scopeCodes) if (!next.has(c)) outline(c, scopeMat).visible = false;
+    for (const c of next) outline(c, scopeMat).visible = true;
+    scopeCodes = next;
+  }
 
   const codeAt = (ll) => { if (!ll) return null; const c = G.cellOf(ll[0], ll[1]); return c >= 0 && G.vid[c] ? G.villages[G.vid[c] - 1] : null; };
   const props = (code) => byCode.get(code)?.properties;
   const tipHtml = (code, line2) => { const p = props(code); return `<b>${esc(p.district)} ${esc(p.name)}</b><span class="k">${line2}</span>`; };
 
   setLines(true);
-  return { feats, byCode, props, codeAt, setLines, paintFill, clearFill, setHover, setSelected, tipHtml, state, get selected() { return selCode; } };
+  return { feats, byCode, props, codeAt, setLines, paintFill, clearFill, setHover, setSelected, setScope, tipHtml, state, get selected() { return selCode; } };
 }

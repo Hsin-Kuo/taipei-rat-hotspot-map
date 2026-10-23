@@ -126,7 +126,68 @@ body.has-timeline #keys{bottom:110px} body.has-timeline #credit{bottom:146px}
 .link{font:inherit;background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline}
 .card .actions{margin-top:14px}
 .card .foot{margin-top:12px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--line);margin:-4px 0 0}
+.tabs button{font:inherit;font-size:.86rem;background:none;border:0;border-bottom:2px solid transparent;padding:6px 0 8px;color:var(--text-2);cursor:pointer}
+.tabs button[aria-selected=true]{color:var(--text);font-weight:700;border-bottom-color:var(--accent)}
+.tabs button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.pane{display:flex;flex-direction:column;gap:16px}
+.pane[hidden]{display:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.danger{color:#b3261e;border-color:#e6b8b3}
+select,input[type=text],input[type=date],input[type=number],textarea{font:inherit;font-size:.84rem;color:var(--text);background:#fff;border:1px solid var(--line-2);border-radius:7px;padding:5px 7px;width:100%;min-width:0}
+select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--focus);outline-offset:0}
+#task-filter{width:auto;flex:1}
+.task-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.task-row{font:inherit;width:100%;text-align:left;display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;color:var(--text);font-size:.84rem;line-height:1.5}
+.task-row:hover,.task-row.on{border-color:var(--accent)}
+.task-row.cancelled{opacity:.55} .task-row.cancelled b{text-decoration:line-through}
+.task-row .k{color:var(--text-3);font-size:.76rem}
+.tdot{width:10px;height:10px;border-radius:50%;margin-top:6px;flex:none}
+#topbar{position:fixed;right:16px;top:16px;z-index:12;display:flex;gap:8px;align-items:center}
+.persona{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px 6px 4px 10px;font-size:.76rem;color:var(--text-3)}
+.persona select{width:auto;border:0;background:transparent;font-weight:700;padding:2px}
+#stats{top:auto;bottom:16px;right:auto;left:332px;display:none}
+.card{top:64px}
+.taskform{width:400px;max-height:calc(100vh - 200px)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+.fgrid label{display:flex;flex-direction:column;gap:3px;font-size:.74rem;color:var(--text-2)}
+.fgrid .full{grid-column:1/-1}
+.fgrid label.chk,.vlist .chk{flex-direction:row;align-items:center;gap:6px;font-size:.82rem;color:var(--text)}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+.seg4{grid-template-columns:repeat(4,1fr)}
+.scope-pick{display:flex;flex-direction:column;gap:6px}
+.vlist{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px 8px;max-height:150px;overflow-y:auto}
+.vlist .all{grid-column:1/-1;font-weight:700}
+.scope-chips{margin-top:6px}
+.scope-chips .sp{display:inline-flex;align-items:center;gap:4px}
+.scope-chips button{font:inherit;background:none;border:0;padding:0 2px;cursor:pointer;color:var(--text-3)}
+.hint{font-size:.72rem;color:var(--text-3);margin:4px 0 0;line-height:1.5}
+.warn{margin-top:10px;background:#fff4e5;border:1px solid #f0c27a;border-radius:10px;padding:8px 10px;font-size:.78rem;line-height:1.6;color:#6b4300}
+.warn b{display:block;color:#a35400}
+.warn .k,.preview .k{display:block;color:var(--text-3);font-size:.7rem}
+.ok{margin-top:10px;font-size:.76rem;color:var(--accent)}
+.err{color:#b3261e;font-size:.8rem;margin:8px 0 0;min-height:1em}
+.preview{margin-top:6px}
+.ptable,.ntable{width:100%;border-collapse:collapse;font-size:.8rem;font-variant-numeric:tabular-nums}
+.ptable th,.ptable td,.ntable th,.ntable td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:right}
+.ptable td:first-child,.ntable th,.ntable td{text-align:left}
+.ptable .k{display:inline;font-size:.68rem}
+.hist{margin:0;padding-left:18px;font-size:.76rem;line-height:1.6}
+.hist .k{color:var(--text-2)}
+.ndlg{border:1px solid var(--line);border-radius:14px;padding:0;width:min(640px,calc(100vw - 32px));max-height:calc(100vh - 64px);background:#fffdf8;color:var(--text);box-shadow:0 20px 50px rgba(40,60,70,.25)}
+.ndlg::backdrop{background:rgba(30,40,50,.35)}
+.dlg{padding:18px;display:flex;flex-direction:column;gap:8px;font-size:.84rem}
+.dlg h3{margin:2px 0 0;font-size:1.3rem;font-weight:900}
+.dlg h4{font-size:.74rem;letter-spacing:.08em;color:var(--text-3);margin:10px 0 0}
+.dlg .x{font:inherit;font-size:1.3rem;background:none;border:0;color:var(--text-3);cursor:pointer}
+.ntable-wrap{max-height:260px;overflow-y:auto;border:1px solid var(--line);border-radius:8px}
+.ntable thead th{position:sticky;top:0;background:#f6f1e7}
+.rel{font-size:.72rem;padding:1px 6px;border-radius:8px;background:#eee8dc}
+.rel.in{background:#f6d5cc;color:#8a2a1c}
+.ntext{font-size:.82rem;line-height:1.6}
+label.btn{display:inline-flex;align-items:center}
 @media (max-width:720px){
+  #topbar{top:8px;right:8px}
   .card{top:8px;right:8px;left:8px;width:auto;max-height:40vh}
   .timeline{left:8px;right:8px;bottom:calc(46vh + 8px)}
   #panel{left:0;right:0;top:auto;bottom:0;width:auto;max-width:none;max-height:46vh;border-radius:16px 16px 0 0}
@@ -150,8 +211,14 @@ body.has-timeline #keys{bottom:110px} body.has-timeline #credit{bottom:146px}
   <header>
     <div class="eyebrow">TAIPEI · 立體模型</div>
     <h1>台北<em>鼠跡</em>模型</h1>
-    <p class="lede">衛星影像鋪在真實地形上，再依都市計畫分區區分市區、綠地、山林與河川；紅色是鼠類活動熱區的推估。</p>
+    <p class="lede">溝鼠族群推估與防治任務管理：依環境因子推估承載量，再把防治任務與回報放進逐日模型。</p>
   </header>
+  <nav class="tabs" role="tablist" aria-label="面板分頁">
+    <button role="tab" type="button" data-tab="layers" aria-selected="true" aria-controls="pane-layers">圖層</button>
+    <button role="tab" type="button" data-tab="tasks" aria-selected="false" aria-controls="pane-tasks" tabindex="-1">任務 <span class="count" id="task-count"></span></button>
+    <button role="tab" type="button" data-tab="reports" aria-selected="false" aria-controls="pane-reports" tabindex="-1">回報</button>
+  </nav>
+  <div role="tabpanel" id="pane-layers" class="pane">
 
   <section>
     <h2>地表</h2>
@@ -197,12 +264,25 @@ body.has-timeline #keys{bottom:110px} body.has-timeline #credit{bottom:146px}
     <a class="btn" href="index.html">回到資料地圖</a>
   </div>
   <div class="foot">族群指數由下水道、市場、攤販、餐飲與垃圾車停靠點推估承載量，再依防治任務與回報逐日推算，是相對值，不是實際捕鼠或通報數。回報目前為<b>模擬資料</b>。</div>
+  </div>
+  <div role="tabpanel" id="pane-tasks" class="pane" hidden>
+    <div class="actions"><button class="btn primary" type="button" id="btn-new-task">＋ 新增任務</button>
+      <select id="task-filter" aria-label="篩選任務"><option value="open">未結案</option><option value="all">全部</option><option value="planned">規劃中</option><option value="active">執行中</option><option value="done">已完成</option><option value="cancelled">已取消</option></select></div>
+    <ul id="task-list" class="task-list"></ul>
+    <div class="foot">任務可編輯、可取消，不能刪除；每次修改都記錄身分與欄位。已取消的任務不進模型。</div>
+  </div>
+  <div role="tabpanel" id="pane-reports" class="pane" hidden>
+    <p class="muted">回報清單與匯入（Phase 4 開發中）。</p>
+  </div>
 </aside>
 
 <div id="tip" role="tooltip"></div>
 <div id="stats" aria-hidden="true"></div>
 <div id="credit"></div>
+<div id="topbar"><label class="persona"><span>身分</span><select id="persona" aria-label="目前身分（demo，不限制權限）"></select></label></div>
 <aside id="card" class="card" aria-label="里資訊" hidden></aside>
+<aside id="taskform" class="card taskform" aria-label="任務表單" hidden></aside>
+<dialog id="notify" class="ndlg" aria-label="通知清單"></dialog>
 <div id="timeline" class="timeline" aria-label="時間軸"></div>
 <div id="keys" aria-hidden="true"><span><kbd>⌥</kbd>或<kbd>右鍵</kbd>＋拖曳 旋轉</span><span><kbd>滾輪</kbd> 縮放</span><span><kbd>拖曳</kbd> 平移</span><span><kbd>點擊</kbd> 行政區飛至該區 · 拉近後點里看詳情</span></div>
 
