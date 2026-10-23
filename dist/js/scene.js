@@ -127,7 +127,7 @@ export async function createScene() {
     const g = topCv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; g.drawImage(satImg, 0, 0);
     if (show.sewer) drawQuad(g, sewerImg, sewer.bounds, .55, 'multiply');
     if (show.heat && heatLayer) drawQuad(g, heatLayer.canvas, heatLayer.bounds, show.heatAlpha);
-    for (const ov of overlays.values()) drawQuad(g, ov.canvas, ov.bounds, ov.alpha ?? 1);
+    for (const ov of [...overlays.values()].sort((a, b) => (a.z ?? 0) - (b.z ?? 0))) drawQuad(g, ov.canvas, ov.bounds, ov.alpha ?? 1);
     topTex.needsUpdate = true;
   }
   // 熱區圖層：canvas 每像素一格，bounds = 四角經緯度（左下、左上、右上、右下）
@@ -199,13 +199,21 @@ export async function createScene() {
     return { k, f, lab, box: [x0, x1, z0, z1], outline: null };
   });
   const hoverMat = new LineMaterial({ color: 0xffffff, linewidth: 3 });
-  function outlineOf(di) {
-    if (di.outline) return di.outline;
-    const pts = [];
-    for (const rings of polysOf(di.f.geometry)) { const ring = rings[0];
+  const lineMats = [hoverMat];
+  const lineMat = (color, linewidth) => { const m = new LineMaterial({ color, linewidth }); m.resolution.set(innerWidth, innerHeight); lineMats.push(m); return m; };
+  // 沿地表的外框線（每個外環一條 Line2，貼地形取樣約 30 m）
+  function geoOutline(geometry, mat) {
+    const grp = new THREE.Group();
+    for (const rings of polysOf(geometry)) { const ring = rings[0], pts = [];
       for (let q = 0; q < ring.length - 1; q++) { const [ax, ay] = ring[q], [bx, by] = ring[q + 1]; const n = Math.max(1, Math.ceil(Math.hypot((bx - ax) * KX, (by - ay) * KY) / .03));
-        for (let s = 0; s < n; s++) { const t = s / n, p = surf(ax + (bx - ax) * t, ay + (by - ay) * t); pts.push(p.x, p.y + .01, p.z); } } }
-    const g = new LineGeometry(); g.setPositions(pts); di.outline = new Line2(g, hoverMat); di.outline.visible = false; scene.add(di.outline); return di.outline;
+        for (let s = 0; s < n; s++) { const t = s / n, p = surf(ax + (bx - ax) * t, ay + (by - ay) * t); pts.push(p.x, p.y + .01, p.z); } }
+      pts.push(pts[0], pts[1], pts[2]);
+      const g = new LineGeometry(); g.setPositions(pts); grp.add(new Line2(g, mat)); }
+    scene.add(grp); return grp;
+  }
+  function outlineOf(di) {
+    if (!di.outline) { di.outline = geoOutline(di.f.geometry, hoverMat); di.outline.visible = false; }
+    return di.outline;
   }
 
   // ---------- 相機與控制 ----------
@@ -229,6 +237,7 @@ export async function createScene() {
 
   // ---------- 拾取：地點優先，否則代理網格 → 行政區 ----------
   const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), tip = $('tip');
+  const hooks = {};      // app.js 掛入：hover(lonlat, r) → 提示 HTML 或 null；click(lonlat, r) → true 表示已處理
   let hoverDi = null;
   function pick(cx, cy) {
     mouse.set(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1); ray.setFromCamera(mouse, camera);
@@ -244,9 +253,13 @@ export async function createScene() {
     if (e.buttons) { tip.style.display = 'none'; return; }
     const now = performance.now(); if (now - lastMove < 40) return; lastMove = now;
     const r = pick(e.clientX, e.clientY);
+    // 打在地表時先問 app（近距離改顯示里）；回傳 null 則用行政區提示
+    const custom = r?.kind === 'dist' && hooks.hover ? hooks.hover(lonLatAt(e.clientX, e.clientY), r) : null;
+    if (!custom) hooks.hover?.(null);
     if (!r) { setHover(null); tip.style.display = 'none'; renderer.domElement.style.cursor = ''; return; }
-    if (r.kind === 'dist') { setHover(r.di); const p = r.di.f.properties; tip.innerHTML = `<b>${p.name}</b><span class="k">${p.li} 里 · ${p.areaKm2} km²</span>`; }
-    else tip.innerHTML = `<b>${r.lines[0]}</b>` + r.lines.slice(1).map(s => `<span class="k">${s}</span>`).join('<br>');
+    if (custom) { setHover(null); tip.innerHTML = custom; }
+    else if (r.kind === 'dist') { setHover(r.di); const p = r.di.f.properties; tip.innerHTML = `<b>${p.name}</b><span class="k">${p.li} 里 · ${p.areaKm2} km²</span>`; }
+    else { setHover(null); tip.innerHTML = `<b>${r.lines[0]}</b>` + r.lines.slice(1).map(s => `<span class="k">${s}</span>`).join('<br>'); }
     renderer.domElement.style.cursor = 'pointer'; tip.style.display = 'block';
     const w = tip.offsetWidth, h = tip.offsetHeight;
     tip.style.left = Math.min(e.clientX + 14, innerWidth - w - 8) + 'px'; tip.style.top = (e.clientY + 14 + h > innerHeight ? e.clientY - h - 14 : e.clientY + 14) + 'px';
@@ -255,7 +268,9 @@ export async function createScene() {
   renderer.domElement.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
   renderer.domElement.addEventListener('pointerup', e => {
     if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5 || performance.now() - down.t > 450) return;
-    const r = pick(e.clientX, e.clientY); if (r?.kind === 'dist') flyToDistrict(r.di);
+    const r = pick(e.clientX, e.clientY);
+    if (hooks.click?.(lonLatAt(e.clientX, e.clientY), r)) return;
+    if (r?.kind === 'dist') flyToDistrict(r.di);
   });
 
   // ---------- 開關 ----------
@@ -270,7 +285,7 @@ export async function createScene() {
   // ---------- 尺寸與迴圈 ----------
   function resize() {
     renderer.setSize(innerWidth, innerHeight); labelR.setSize(innerWidth, innerHeight);
-    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); hoverMat.resolution.set(innerWidth, innerHeight);
+    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); lineMats.forEach(m => m.resolution.set(innerWidth, innerHeight));
   }
   addEventListener('resize', resize); resize();
   renderer.shadowMap.needsUpdate = true;   // 場景靜態：陰影只算一次（切換陰影時重算）
@@ -291,7 +306,7 @@ export async function createScene() {
     return g ? [LON0 + g.point.x / KX, LAT0 - g.point.z / KY] : null;
   }
   const api = { THREE, scene, camera, controls, renderer, labelR, flyTo, flyToDistrict, distInfo, districts, groups, pick, lonLatAt, surf, X, Z, KX, KY, hAt, polysOf,
-    setHeat, setOverlay, repaint, show, texSize: [cw, ch], get fps() { return fps; }, tris: model.tris, buildMs, sun };
+    setHeat, setOverlay, repaint, show, hooks, geoOutline, lineMat, camDist: () => camera.position.distanceTo(controls.target), texBounds: tex.bounds, texSize: [cw, ch], get fps() { return fps; }, tris: model.tris, buildMs, sun };
   window.__m = api;
   return api;
 }

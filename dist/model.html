@@ -99,7 +99,35 @@ input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px rgba(
 .tl-scale{position:relative;display:flex;justify-content:space-between;font-size:.68rem;color:var(--text-3);font-variant-numeric:tabular-nums}
 .tl-now{position:absolute;transform:translateX(-50%);color:var(--accent);font-weight:700}
 body.has-timeline #keys{bottom:110px} body.has-timeline #credit{bottom:146px}
+.card{position:fixed;right:16px;top:56px;width:340px;max-width:calc(100vw - 32px);max-height:calc(100vh - 200px);overflow-y:auto;z-index:11;background:var(--panel);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:14px;padding:16px 16px 12px;box-shadow:0 10px 30px rgba(40,60,70,.14);font-size:.84rem}
+.card-h{display:flex;justify-content:space-between;align-items:flex-start}
+.card h3{margin:2px 0 8px;font-size:1.35rem;font-weight:900}
+.card h4{font-size:.74rem;letter-spacing:.08em;color:var(--text-3);margin:14px 0 6px;font-weight:700}
+.card .x{font:inherit;font-size:1.3rem;line-height:1;background:none;border:0;color:var(--text-3);cursor:pointer;padding:2px 6px;border-radius:6px}
+.card .x:hover{color:var(--text)} .card .x:focus-visible{outline:2px solid var(--focus)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
+.kpis>div{display:flex;flex-direction:column;gap:2px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px}
+.kpi-v{font-size:1.35rem;font-weight:900;font-variant-numeric:tabular-nums}
+.kpi-v.down{color:#2a6ed2} .kpi-v.up{color:#c0392b}
+.kpi-l{font-size:.68rem;color:var(--text-3)}
+.lvl{align-self:flex-start;font-weight:700;padding:3px 8px;border-radius:6px;margin:3px 0 2px}
+.card-date{font-size:.72rem;color:var(--text-3);margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.spark{width:100%;height:64px;display:block}
+.spark-line{fill:none;stroke:#c0392b;stroke-width:2;vector-effect:non-scaling-stroke}
+.spark-base{stroke:var(--text-3);stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
+.spark-cur{stroke:var(--accent);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.spark-future{fill:#f3e3c8;opacity:.45}
+.spark-axis{display:flex;justify-content:space-between;font-size:.66rem;color:var(--text-3)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.sp{font-size:.74rem;padding:2px 8px;border-radius:9px;background:#eee8dc}
+.sp-norway{background:#f6d5cc;color:#8a2a1c}
+.tasks{margin:0;padding-left:18px;line-height:1.7}
+.muted{color:var(--text-3);margin:0}
+.link{font:inherit;background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline}
+.card .actions{margin-top:14px}
+.card .foot{margin-top:12px}
 @media (max-width:720px){
+  .card{top:8px;right:8px;left:8px;width:auto;max-height:40vh}
   .timeline{left:8px;right:8px;bottom:calc(46vh + 8px)}
   #panel{left:0;right:0;top:auto;bottom:0;width:auto;max-width:none;max-height:46vh;border-radius:16px 16px 0 0}
   #keys,#stats{display:none} #credit{bottom:auto;top:8px;right:8px}
@@ -149,6 +177,8 @@ body.has-timeline #keys{bottom:110px} body.has-timeline #credit{bottom:146px}
     <div id="ramp-change" hidden><div class="ramp ramp-div" aria-hidden="true"></div>
       <div class="ramp-labels"><span>被壓低</span><span>與環境基準相比</span><span>升高</span></div></div>
     <div class="slider"><span>不透明度</span><input type="range" id="heat-alpha" min="0.2" max="1" step="0.05" value="0.65" aria-label="熱區不透明度"><span id="heat-alpha-v">65%</span></div>
+    <div class="row"><label for="t-vfill"><span class="chip" style="background:linear-gradient(90deg,#fac878,#a01423)"></span>里分級著色</label><span class="switch"><input type="checkbox" id="t-vfill"><i></i></span></div>
+    <div class="row"><label for="t-vlines"><span class="chip" style="background:#fff;box-shadow:inset 0 0 0 1px #9aa3a8"></span>里界線 <span class="count">456</span></label><span class="switch"><input type="checkbox" id="t-vlines" checked><i></i></span></div>
     <div class="row"><label for="t-sewer"><span class="chip" style="background:#2f86c4"></span>污水管線</label><span class="switch"><input type="checkbox" id="t-sewer"><i></i></span></div>
   </section>
 
@@ -172,8 +202,9 @@ body.has-timeline #keys{bottom:110px} body.has-timeline #credit{bottom:146px}
 <div id="tip" role="tooltip"></div>
 <div id="stats" aria-hidden="true"></div>
 <div id="credit"></div>
+<aside id="card" class="card" aria-label="里資訊" hidden></aside>
 <div id="timeline" class="timeline" aria-label="時間軸"></div>
-<div id="keys" aria-hidden="true"><span><kbd>⌥</kbd>或<kbd>右鍵</kbd>＋拖曳 旋轉</span><span><kbd>滾輪</kbd> 縮放</span><span><kbd>拖曳</kbd> 平移</span><span><kbd>點擊</kbd> 行政區 飛至該區</span></div>
+<div id="keys" aria-hidden="true"><span><kbd>⌥</kbd>或<kbd>右鍵</kbd>＋拖曳 旋轉</span><span><kbd>滾輪</kbd> 縮放</span><span><kbd>拖曳</kbd> 平移</span><span><kbd>點擊</kbd> 行政區飛至該區 · 拉近後點里看詳情</span></div>
 
 <script type="module" src="js/app.js"></script>
 </body>
