@@ -4,7 +4,10 @@
 // 數值單位：族群指數，全市 K 的第 99 百分位 = 100。
 
 export const DAY_MS = 864e5;
-export const dayOf = (iso, todayIso) => Math.floor((Date.parse(iso) - Date.parse(todayIso)) / DAY_MS);
+// 日期一律以臺北日界：'YYYY-MM-DD' 視為臺北當日；含時間者先轉臺北時間再取日
+const TPE = 8 * 3600e3;
+const tpeDay = (iso) => Math.floor((Date.parse(iso) + (iso.length > 10 ? TPE : 0)) / DAY_MS);
+export const dayOf = (iso, todayIso) => tpeDay(iso) - tpeDay(todayIso);
 export const isoOf = (day, todayIso) => new Date(Date.parse(todayIso) + day * DAY_MS).toISOString().slice(0, 10);
 
 // ---------- 網格 ----------
@@ -110,7 +113,8 @@ export function simulate(G, env, P, tasks, todayIso, range = [-90, 30], geoCache
     const tp = P.tasks[t.type], s = dayOf(t.start, todayIso), e = Math.max(s, dayOf(t.end || t.start, todayIso));
     const key = t.scope.villages.join(',') + '|' + tp.ring;
     if (!geoCache.has(key)) geoCache.set(key, taskGeometry(G, env, t.scope.villages, tp.ring));
-    const daily = tp.killPer === 'day' ? tp.kill : 1 - Math.pow(1 - tp.kill, 1 / (e - s + 1));
+    const kill = tp.baitKill?.[t.bait?.kind] ?? tp.kill;    // 投藥依藥劑種類
+    const daily = tp.killPer === 'day' ? kill : 1 - Math.pow(1 - kill, 1 / (e - s + 1));
     return { t, tp, s, e, daily, geo: geoCache.get(key) };
   });
   const N = new Float32Array(nd * M);

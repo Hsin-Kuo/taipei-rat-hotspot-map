@@ -1,0 +1,68 @@
+// 管理工具主程式：載入網格 → 承載量 → 逐日模擬 → 熱區貼圖；時間軸切換日期
+import { createScene } from './scene.js';
+import * as E from './engine.js';
+import { renderHeat } from './heat.js';
+import { createTimeline } from './timeline.js';
+import { store } from './store.js';
+import { $, taipeiToday } from './util.js';
+
+const P = new URLSearchParams(location.search);
+const TODAY = /^\d{4}-\d{2}-\d{2}$/.test(P.get('today') || '') ? P.get('today') : taipeiToday();   // ?today=YYYY-MM-DD 可固定 demo 日期
+const RANGE = [-90, 30];
+
+try { await main(); } catch (e) { $('loading').textContent = '載入失敗：' + e.message; console.error(e); }
+
+async function main() {
+  const [scene, gridMeta, gridBuf, simReports] = await Promise.all([
+    createScene(),
+    fetch('data/grid.json').then(r => r.json()),
+    fetch('data/grid.bin').then(r => r.arrayBuffer()),
+    fetch('data/reports_sim.json').then(r => r.json()),
+  ]);
+  const G = E.makeGrid(gridMeta, gridBuf);
+  const app = {
+    G, scene, today: TODAY, params: store.params(),
+    env: null, sim: null, day: 0, heatMode: 'index',
+    get tasks() { return store.tasks; },
+    get reports() { return [...simReports.reports, ...store.reports]; },
+  };
+  const geoCache = new Map();
+  const heatCanvas = document.createElement('canvas');
+
+  // 環境（因子設定改變時）→ 模擬（任務或成長參數改變時）→ 貼圖（日期、模式、回報改變時）
+  function recomputeEnv() { app.env = E.computeEnv(G, app.params); geoCache.clear(); recomputeSim(); }
+  function recomputeSim() {
+    const t0 = performance.now();
+    app.sim = E.simulate(G, app.env, app.params, app.tasks, TODAY, RANGE, geoCache);
+    app.simMs = Math.round(performance.now() - t0);
+    timeline.setMarks(app.tasks, app.reports.filter(r => app.params.reports.species.includes(r.species)));
+    redraw();
+  }
+  function redraw() {
+    const boost = E.reportBoost(G, app.params, app.reports, app.day, TODAY);
+    app.values = E.estimate(G, app.sim, boost, app.day);
+    renderHeat(G, app.values, app.env.K, app.heatMode, heatCanvas);
+    scene.setHeat(heatCanvas, gridMeta.bounds);
+  }
+
+  const timeline = createTimeline($('timeline'), { d0: RANGE[0], d1: RANGE[1], today: TODAY, onChange: (d) => { app.day = d; redraw(); } });
+  const applyTimelineVisible = () => {
+    const on = app.params.display.timeline;
+    $('timeline').hidden = !on;
+    document.body.classList.toggle('has-timeline', on);
+    if (!on) { timeline.stop(); timeline.set(0); }
+  };
+  applyTimelineVisible();
+
+  // 熱區模式：族群指數 / 與環境基準相比的變化
+  document.querySelectorAll('input[name=heat-mode]').forEach(r => r.addEventListener('change', e => {
+    app.heatMode = e.target.value;
+    $('ramp-index').hidden = app.heatMode !== 'index'; $('ramp-change').hidden = app.heatMode !== 'change';
+    redraw();
+  }));
+
+  recomputeEnv();
+  $('loading').classList.add('done');
+  Object.assign(app, { recomputeEnv, recomputeSim, redraw, timeline, applyTimelineVisible, E });
+  window.__app = app;
+}

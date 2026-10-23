@@ -62,10 +62,10 @@ test('已取消任務不進模型', () => {
 });
 
 test('環境清消：K 暫降後依半衰期恢復', () => {
-  const sim = simulate(G, env, P, [task({ type: 'clean', start: '2026-09-01', end: '2026-09-03' })], TODAY);
-  const k = vm(env.K, V), d = dayOf('2026-09-03', TODAY);
-  const low = vm(estimate(G, sim, null, d + 3), V), rec = vm(estimate(G, sim, null, d + 50), V);
-  assert.ok(low < 0.8 * k && rec > low, `${low / k} → ${rec / k}`);
+  const sim = simulate(G, env, P, [task({ type: 'clean', start: '2026-04-01', end: '2026-04-03' })], TODAY, [-240, 30]);
+  const k = vm(env.K, V), d = dayOf('2026-04-03', TODAY);
+  const low = vm(estimate(G, sim, null, d + 3), V), rec = vm(estimate(G, sim, null, d + 200), V);
+  assert.ok(low < 0.85 * k && rec > 0.9 * k, `${low / k} → ${rec / k}`);
 });
 
 test('回報加成：中心最高、半徑外為 0、半衰期後減半', () => {
@@ -90,4 +90,15 @@ test('猛禽提示：範圍 1 km 內的點才算', () => {
 test('mergeParams：舊設定缺欄位補預設', () => {
   const m = mergeParams({ base: { r: 0.01 }, bogus: 1 });
   assert.equal(m.base.r, 0.01); assert.equal(m.base.kFloor, DEFAULTS.base.kFloor); assert.ok(!('bogus' in m));
+});
+
+test('dayOf：以臺北日界計算', () => {
+  assert.equal(dayOf('2026-10-10T02:00:00+08:00', TODAY), -14);
+  assert.equal(dayOf('2026-10-10T23:59:00+08:00', TODAY), -14);
+  assert.equal(dayOf('2026-10-24', TODAY), 0);
+});
+
+test('投藥：第二代藥劑撲殺率高於第一代', () => {
+  const at = (kind) => { const sim = simulate(G, env, P, [task({ bait: { kind } })], TODAY); return vm(estimate(G, sim, null, dayOf('2026-10-01', TODAY)), V); };
+  assert.ok(at('sgar') < at('fgar'));
 });
