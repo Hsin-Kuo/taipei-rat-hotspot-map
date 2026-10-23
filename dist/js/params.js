@@ -58,7 +58,7 @@ export const META = {
   'factor.weight': { label: '強度', unit: '', min: 0, max: 3, step: 0.1, src: null },
   'factor.growth': { label: '增加程度', unit: '×', min: 0.25, max: 3, step: 0.05, src: null, note: '此因子主導的格子，族群回升速度倍率' },
   'factor.sat':    { label: '飽和', unit: '', min: 0, max: 6, step: 0.1, src: null, note: '0 = 線性；越大越早飽和' },
-  'task.kill':  { label: '扣除比例', unit: '', min: 0, max: 1, step: 0.001, src: ['richards1981', 'byers2019trap'], note: '投藥：bromadiolone 7 天約 81%；捕鼠籠：每日比例，約每週 15%（假設）' },
+  'task.kill':  { label: '扣除比例', unit: '', min: 0, max: 1, step: 0.001, src: ['richards1981'], note: 'bromadiolone 投餌 7 天約 81%' },
   'task.baitKill': { label: '依藥劑撲殺率', unit: '', min: 0, max: 1, step: 0.01, src: ['buckle2012'], note: '第二代 21–35 天約 95%；第一代 70% 為假設（缺都市田間數據）' },
   'task.kDrop': { label: '承載量降幅', unit: '', min: 0, max: 0.9, step: 0.01, src: null, note: '清消 30%、填補鼠洞 20% 為假設' },
   'task.kHalf': { label: '承載量恢復半衰期', unit: '日', min: 1, max: 730, step: 1, src: ['esther2022'], note: '衛生改善使反彈延後約 85 天（畜牧場）；鼠洞填補後約 6 個月回到原水準' },
@@ -67,6 +67,7 @@ export const META = {
   'reports.base':   { label: '升溫幅度', unit: '指數', min: 0, max: 100, step: 1, src: null },
   'reports.half':   { label: '半衰期', unit: '日', min: 1, max: 120, step: 1, src: null },
   'reports.radius': { label: '影響半徑', unit: 'm', min: 50, max: 500, step: 10, src: ['byers2019'], note: '每日活動約 10–20 m、街廓尺度 30–150 m；150 m 涵蓋同一街廓' },
+  'reports.evidence': { label: '跡證權重', unit: '', min: 0, max: 1.5, step: 0.05, src: null },
   'raptor.buffer':    { label: '猛禽提示外擴', unit: 'm', min: 200, max: 5000, step: 100, src: ['hong2019', 'trra2017'], note: '臺灣猛禽肝臟過半檢出抗凝血劑；1 km ≈ 臺北鳳頭蒼鷹平均巢間距之半（推估，無官方標準）' },
   'raptor.sinceYear': { label: '鳳頭蒼鷹紀錄起始年', unit: '', min: 1985, max: 2026, step: 1, src: null },
 };

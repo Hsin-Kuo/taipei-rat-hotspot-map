@@ -9,6 +9,7 @@ import { renderCard } from './card.js';
 import { createTasks } from './tasks.js';
 import { openNotify } from './notify.js';
 import { createReports } from './reports.js';
+import { createSettings } from './settings.js';
 import { PERSONAS } from './params.js';
 import { $, taipeiToday } from './util.js';
 
@@ -123,6 +124,7 @@ async function main() {
   app.openNotify = (t) => openNotify(app, t);
   const tasks = app.taskUI = createTasks(app);
   const reportsUI = app.reportsUI = createReports(app);
+  app.settingsUI = createSettings(app);
   app.newTask = (codes) => tasks.newTask(codes);
   app.openTask = (id) => tasks.openTask(id);
   const sel = $('persona');
