@@ -1,0 +1,29 @@
+{
+  "file": "satellite.jpg",
+  "width": 1600,
+  "height": 1760,
+  "viewBox": [
+    0,
+    0,
+    1000,
+    1100
+  ],
+  "scene": "S2A_51RUH_20250114_0_L2A",
+  "date": "2025-01-14",
+  "cloudCover": 0.006855,
+  "attribution": "Contains modified Copernicus Sentinel data 2025",
+  "source": "Copernicus Sentinel-2 L2A TCI，經 AWS Open Data（Element 84 Earth Search）取得",
+  "grade": {
+    "saturation": 0.55,
+    "brightness": 0.95,
+    "gamma": 1,
+    "tint": [
+      14,
+      18,
+      23
+    ],
+    "tintMix": 0.1
+  },
+  "outsideDim": 0.45,
+  "builtAt": "2026-10-15T10:27:30.568Z"
+}

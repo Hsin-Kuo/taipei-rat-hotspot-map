@@ -1,0 +1,16 @@
+{
+  "file": "title.jpg",
+  "width": 1920,
+  "height": 1080,
+  "cityAt": 0.64,
+  "scene": "S2A_51RUH_20250114_0_L2A",
+  "attribution": "Contains modified Copernicus Sentinel data 2025",
+  "layers": [
+    "Sentinel-2 L2A TCI",
+    "heat.png",
+    "垃圾車路徑 485 車次",
+    "捷運路網",
+    "行政區界"
+  ],
+  "builtAt": "2026-10-15T12:33:25.005Z"
+}

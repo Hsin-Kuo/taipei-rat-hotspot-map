@@ -1,0 +1,282 @@
+{
+  "builtAt": "2026-10-16T12:19:50.657Z",
+  "sources": {
+    "sewer_lines.csv": {
+      "name": "臺北市污水下水道管線",
+      "agency": "工務局衛工處",
+      "page": "https://data.taipei/dataset/detail?id=af1e6e42-5ffc-4be0-983f-51c03d5d1b17"
+    },
+    "sewer_manholes.csv": {
+      "name": "臺北市污水下水道人孔",
+      "agency": "工務局衛工處",
+      "page": "https://data.gov.tw/dataset/136379"
+    },
+    "sewer_inlets.csv": {
+      "name": "臺北市污水下水道陰井",
+      "agency": "工務局衛工處",
+      "page": "https://data.gov.tw/dataset/136377"
+    },
+    "storm_manholes.csv": {
+      "name": "臺北市水利處雨水下水道人孔資料",
+      "agency": "工務局水利處",
+      "page": "https://data.taipei/dataset/detail?id=3e62c860-0753-4c79-8fe1-bcb3e0243534"
+    },
+    "markets.csv": {
+      "name": "臺北市攤販集中場",
+      "agency": "市場處",
+      "page": "https://data.gov.tw/dataset/121594"
+    },
+    "garbage_trucks.csv": {
+      "name": "臺北市垃圾車點位路線資訊",
+      "agency": "環境保護局",
+      "page": "https://data.gov.tw/dataset/136515"
+    },
+    "markets_trad.csv": {
+      "name": "臺北市傳統市(商)場",
+      "agency": "市場處",
+      "page": "https://data.gov.tw/dataset/121593"
+    },
+    "recycle_points.csv": {
+      "name": "臺北市垃圾資源回收、廚餘回收限時收受點",
+      "agency": "環境保護局",
+      "page": "https://data.gov.tw/dataset/132357"
+    },
+    "road8m.zip": {
+      "name": "臺北市寬度超過8公尺道路GIS圖資",
+      "agency": "工務局新工處",
+      "page": "https://data.taipei/dataset/detail?id=ee2e4015-8844-48fb-aa57-31209909b0fc"
+    },
+    "mrt_routes.json": {
+      "name": "臺北都會區大眾捷運系統路網圖",
+      "agency": "捷運工程局",
+      "page": "https://data.gov.tw/dataset/121208"
+    },
+    "mrt_stations.json": {
+      "name": "臺北都會區大眾捷運系統車站點位圖",
+      "agency": "捷運工程局",
+      "page": "https://data.gov.tw/dataset/121140"
+    },
+    "dtm/taipei_dem.zip": {
+      "name": "分幅_臺北市20MDEM(2025)（全臺灣20公尺網格數值地形模型）",
+      "agency": "內政部地政司",
+      "page": "https://data.gov.tw/dataset/175239"
+    },
+    "dtm/newtaipei_dem.zip": {
+      "name": "分幅_新北市20MDEM(2025)（補市界外山系）",
+      "agency": "內政部地政司",
+      "page": "https://data.gov.tw/dataset/175239"
+    },
+    "li_boundary.zip": {
+      "name": "臺北市里界圖",
+      "agency": "民政局",
+      "page": "https://data.taipei/dataset/detail?id=6b17b31d-4e16-495e-95b1-9fd1f47c80d8"
+    },
+    "food:fda": {
+      "name": "食品業者登錄資料集",
+      "agency": "衛生福利部食品藥物管理署",
+      "page": "https://data.gov.tw/dataset/8938",
+      "rows": 36587
+    },
+    "food:fia": {
+      "name": "全國營業(稅籍)登記資料集",
+      "agency": "財政部財政資訊中心",
+      "page": "https://data.gov.tw/dataset/9400",
+      "rows": 25815
+    },
+    "food:hygiene": {
+      "name": "臺北市通過餐飲衛生管理分級評核業者",
+      "agency": "臺北市政府衛生局",
+      "page": "https://data.gov.tw/dataset/145738",
+      "rows": 1687
+    },
+    "food:housenum": {
+      "name": "臺北市門牌位置數值資料",
+      "agency": "臺北市政府民政局",
+      "page": "https://data.taipei/dataset/detail?id=b7c8e724-1e98-45ee-a0bd-f3840623ed97",
+      "rows": 1157763
+    },
+    "foodwaste": {
+      "name": "疑似廚餘暫置點（EcoSentinel 整理）",
+      "agency": "EcoSentinel 生態守護系統（民間）",
+      "page": "https://www.ecosentinel.tw/",
+      "rows": 8,
+      "license": "未標示；轉錄引用"
+    },
+    "raptor:gbif": {
+      "name": "GBIF 鳳頭蒼鷹出現紀錄（Taiwan Wild Bird Federation Bird Records Database、Investigation Current Status of River in Taiwan between 2002 to 2022）",
+      "agency": "GBIF / 各資料集提供者",
+      "page": "https://www.gbif.org/species/2480593",
+      "rows": 2061,
+      "license": "CC0 / CC BY 4.0",
+      "fetchedAt": "2026-10-14T17:02:37.313Z"
+    },
+    "raptor:inat": {
+      "name": "iNaturalist 研究等級觀察（鳳頭蒼鷹）",
+      "agency": "iNaturalist 社群",
+      "page": "https://www.inaturalist.org/taxa/5231",
+      "rows": 44,
+      "license": "CC0 / CC BY",
+      "fetchedAt": "2026-10-14T17:02:38.403Z"
+    },
+    "petition": {
+      "name": "臺北市陳情系統類別資料",
+      "agency": "研考會",
+      "page": "https://data.taipei/dataset/detail?id=cb423c17-88eb-4231-a725-f1b93247d1bf",
+      "rows": "119 個月",
+      "fetchedAt": "2026-10-14T18:05:08.514Z"
+    },
+    "dtm": {
+      "name": "全臺灣 20 公尺網格數值地形模型 DTM（2025 臺北市、新北市分幅）",
+      "agency": "內政部地政司",
+      "page": "https://data.gov.tw/dataset/175239",
+      "rows": "3890633 格點",
+      "license": "政府資料開放授權條款第 1 版"
+    }
+  },
+  "counts": {
+    "districts": 12,
+    "li": 456,
+    "sewerManholes": 45991,
+    "sewerInlets": 184255,
+    "sewerLineClass": {
+      "trunk": 30033,
+      "branch": 9267,
+      "lateral": 38030
+    },
+    "sewerLinesBadGeometry": 179,
+    "sewerLinesRaw": 77603,
+    "sewerLines": 77330,
+    "stormManholes": 19443,
+    "marketsRaw": 47,
+    "markets": 42,
+    "garbageRows": 4012,
+    "garbageStops": 3870,
+    "tradMarkets": 47,
+    "recyclePointsRaw": 30,
+    "recyclePoints": 25,
+    "foodWasteNodes": 8,
+    "foodRows": 47031,
+    "foodAddresses": 25369,
+    "foodCategories": {
+      "餐廳": 6922,
+      "麵店、小吃店": 5179,
+      "早餐店": 1552,
+      "便當、自助餐店": 997,
+      "咖啡館": 976,
+      "手搖飲店": 909,
+      "其他飲料店": 899,
+      "餐食攤販": 504,
+      "連鎖速食店": 304,
+      "飲酒店": 218
+    },
+    "raptorFine": 36,
+    "raptorCells": 71,
+    "raptorRaw": 2105,
+    "raptor": 821,
+    "petitionMonths": 119
+  },
+  "dropped": {
+    "sewerManholes": 1,
+    "sewerInlets": 11,
+    "stormManholes": 0,
+    "markets": 0,
+    "garbage": 0,
+    "tradMarkets": 0,
+    "recyclePoints": {
+      "outside": 0,
+      "noFoodWaste": 5
+    },
+    "food": 0,
+    "raptor": {
+      "coarse": 1048,
+      "outside": 147,
+      "dup": 64,
+      "dead": 25
+    }
+  },
+  "fetchedAt": null,
+  "foodFetchedAt": "2026-10-15T00:20:00.000Z",
+  "joinRate": 0.9965,
+  "sewerLinesBin": {
+    "segments": 77330,
+    "origin": [
+      121.5,
+      25.05
+    ],
+    "bytes": 1314614
+  },
+  "foodStack": {
+    "mode": "sqrt",
+    "cap": 10
+  },
+  "heat": {
+    "width": 739,
+    "height": 913,
+    "cell": 30,
+    "weights": {
+      "sewer": 1,
+      "storm": 1,
+      "market": 1,
+      "food": 1,
+      "garbage": 1,
+      "tmarket": 1
+    },
+    "sigma": {
+      "sewer": 250,
+      "storm": 250,
+      "market": 450,
+      "food": 200,
+      "garbage": 200,
+      "tmarket": 350
+    },
+    "gamma": 1.25,
+    "litPx": 133255,
+    "sources": [
+      "sewer",
+      "storm",
+      "market",
+      "food",
+      "garbage",
+      "tmarket"
+    ]
+  },
+  "districtStats": {
+    "heat_vs_ratPerK": {
+      "spearman": 0.71,
+      "pearson": 0.78
+    },
+    "heat_vs_density": {
+      "spearman": 0.89,
+      "pearson": 0.94
+    },
+    "ratPerK_vs_density": {
+      "spearman": 0.63,
+      "pearson": 0.85
+    },
+    "heat_vs_age": {
+      "spearman": 0.32,
+      "pearson": 0.55
+    }
+  },
+  "terrain": {
+    "demPoints": 3890633,
+    "width": 1067,
+    "height": 1133,
+    "coveredPx": 1083124,
+    "elevationRange": [
+      -6.1,
+      1114.9
+    ]
+  },
+  "sewerLinesRaster": {
+    "width": 1623,
+    "height": 2003,
+    "cell": 10
+  },
+  "bbox": [
+    121.4636,
+    24.96627,
+    121.62464,
+    25.15245
+  ]
+}

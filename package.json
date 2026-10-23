@@ -1,0 +1,35 @@
+{
+  "name": "taipei-rat-hotspot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "台北市老鼠熱點推估地圖（微 3D 行政區 + 發光熱力圖）",
+  "scripts": {
+    "fetch": "node scripts/fetch.mjs",
+    "build": "node scripts/build.mjs",
+    "serve": "serve dist -l 3000",
+    "fetch:food": "node scripts/fetch-food.mjs",
+    "geocode:food": "python3 -I scripts/geocode.py raw/taipei_housenum.csv raw/food/fda_taipei_food.csv 2 raw/food/fda_geo.csv && python3 -I scripts/geocode.py raw/taipei_housenum.csv raw/food/fia_taipei_food.csv 0 raw/food/fia_geo.csv && python3 -I scripts/geocode.py raw/taipei_housenum.csv raw/food/hygiene.csv 3 raw/food/hygiene_geo.csv",
+    "merge:food": "python3 -I scripts/merge_food.py raw/food",
+    "prep:food": "npm run fetch:food && npm run geocode:food && npm run merge:food",
+    "fetch:raptor": "node scripts/fetch-raptor.mjs",
+    "fetch:petition": "node scripts/fetch-petition.mjs",
+    "build:game": "node scripts/build-game-data.mjs",
+    "route:trucks": "node scripts/route-trucks.mjs",
+    "build:satellite": "node scripts/build-satellite.mjs",
+    "build:title": "node scripts/build-title-art.mjs",
+    "build:model-texture": "node scripts/build-model-texture.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@turf/turf": "^7.4.0",
+    "csv-parse": "^7.0.3",
+    "geotiff": "^3.0.5",
+    "iconv-lite": "^0.7.3",
+    "jszip": "^3.10.1",
+    "pngjs": "^7.0.0",
+    "proj4": "^2.22.0",
+    "serve": "^14.2.6",
+    "shpjs": "^6.2.0"
+  }
+}

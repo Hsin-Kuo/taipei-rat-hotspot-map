@@ -1,0 +1,38 @@
+{
+  "image": "data/model_texture.jpg",
+  "bounds": [
+    121.4568053,
+    24.958291099999997,
+    121.6679053,
+    25.2121911
+  ],
+  "width": 2111,
+  "height": 2539,
+  "res": 0.0001,
+  "scene": "S2A_51RUH_20250114_0_L2A",
+  "date": "2025-01-14",
+  "attribution": "Contains modified Copernicus Sentinel data 2025；臺北市都市計畫使用分區圖（都市發展局）",
+  "classAreaKm2": {
+    "forest": 129.4,
+    "road": 20.6,
+    "veg": 22.9,
+    "urban": 65,
+    "park": 21.2,
+    "water": 6.5,
+    "bank": 0.4,
+    "airport": 1.9
+  },
+  "levels": {
+    "lo": [
+      9,
+      14,
+      6
+    ],
+    "hi": [
+      238,
+      231,
+      214
+    ]
+  },
+  "builtAt": "2026-10-23T11:36:16.369Z"
+}

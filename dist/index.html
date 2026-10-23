@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>台北鼠跡圖</title>
+<meta name="description" content="以污水下水道、雨水下水道與攤販集中場分佈推估台北市鼠類活動熱區的互動地圖。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27%23090c12%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%278%27 fill=%27%23e8402c%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%273%27 fill=%27%23ffe9c9%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/deck.gl@9.1.14/dist.min.js"></script>
+<style>
+:root{
+  color-scheme:dark;
+  --ink:#040705;            /* 終端機黑，帶一點綠 */
+  --ink-2:#081009;
+  --district:#0f1f14;
+  --district-edge:#2f7a46;
+  --panel:rgba(5,10,6,.88);
+  --line:#1d3a26;
+  --text:#b9f0b3;           /* 磷光綠 */
+  --text-2:#6fbf7a;
+  --text-3:#3f7a4c;
+  --accent:#39ff6a;         /* 高亮綠，省著用 */
+  --sewer:#2fd36f;
+  --sewer-mh:#7dffad;
+  --storm:#22d3ee;
+  --market:#ffd23f;
+  --food:#e879f9;
+  --raptor:#eaf7e6;
+  --garbage:#9ccc4a;
+  --tmarket:#ff9f43;
+  --recycle:#ff6fb5;
+  --fw-severe:#ff4d4d;
+  --fw-mid:#ffb347;
+  --fw-ok:#5ee68c;
+  --heat-1:#4a0a12; --heat-2:#9d1522; --heat-3:#e8402c; --heat-4:#ff9452; --heat-5:#ffe9c9;
+  --focus:#39ff6a;
+  --radius:6px;
+  font-size:15px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--ink);color:var(--text);font-family:"JetBrains Mono","IBM Plex Mono","Noto Sans TC",monospace;-webkit-font-smoothing:antialiased}
+/* CRT 掃描線與邊緣暗角，純裝飾，不攔截滑鼠 */
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;background:repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 1px,transparent 1px 3px);mix-blend-mode:multiply;opacity:.6}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:49;background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,.45) 100%)}
+@media (prefers-reduced-motion:no-preference){.cursor{display:inline-block;width:.55em;height:1em;background:var(--accent);vertical-align:-.1em;margin-left:.15em;animation:blink 1.1s steps(1) infinite;box-shadow:0 0 8px var(--accent)}@keyframes blink{50%{opacity:0}}}
+#map{position:fixed;inset:0}
+canvas{outline:none}
+
+/* ---------- 側欄 ---------- */
+#panel{
+  position:fixed;left:16px;top:16px;bottom:16px;width:324px;max-width:calc(100vw - 32px);
+  background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--line);border-radius:4px;padding:22px 20px 18px;box-shadow:0 0 0 1px rgba(57,255,106,.06),0 0 24px rgba(57,255,106,.05) inset;
+  display:flex;flex-direction:column;gap:18px;overflow-y:auto;z-index:10;
+}
+.eyebrow{font-size:.72rem;letter-spacing:.12em;color:var(--text-3)}
+.eyebrow::before{content:"$ ";color:var(--accent)}
+h1{font-family:"JetBrains Mono","Noto Sans TC",monospace;font-weight:800;font-size:2rem;line-height:1.05;margin:4px 0 6px;letter-spacing:.02em;text-shadow:0 0 14px rgba(57,255,106,.35)}
+h1 em{font-style:normal;color:var(--accent);text-shadow:0 0 16px rgba(57,255,106,.7)}
+.lede{font-size:.86rem;color:var(--text-2);line-height:1.55;margin:0}
+.lede b{color:var(--text);font-weight:500}
+section{display:flex;flex-direction:column;gap:10px}
+h2{font-size:.78rem;font-weight:700;letter-spacing:.08em;color:var(--text-2);margin:0;display:flex;align-items:center;gap:6px}
+h2::before{content:"//";color:var(--text-3);font-weight:400}
+h2 .hint{margin-left:auto}
+h2 .hint{font-weight:400;letter-spacing:0;color:var(--text-3);font-size:.72rem}
+.row{display:flex;align-items:center;gap:10px;min-height:28px}
+.row label{flex:1;font-size:.88rem;display:flex;align-items:center;gap:9px;cursor:pointer}
+.chip{width:12px;height:12px;border-radius:50%;flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.4)}
+.chip.line{width:16px;height:3px;border-radius:2px}
+.chip.glow{box-shadow:0 0 10px 2px var(--heat-3);background:var(--heat-3)}
+.count{font-family:"JetBrains Mono","IBM Plex Mono",monospace;font-size:.72rem;color:var(--text-3);font-variant-numeric:tabular-nums}
+.val{font-family:"JetBrains Mono","IBM Plex Mono",monospace;font-size:.78rem;color:var(--text-2);width:3.6em;text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:3px;background:var(--line);border-radius:2px;outline:none;margin:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--text);border:2px solid var(--ink);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--text);border:2px solid var(--ink);cursor:pointer}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px var(--focus)}
+.slider{display:grid;grid-template-columns:6.4em 1fr 3.6em;align-items:center;gap:10px;font-size:.84rem}
+.slider .name{display:flex;align-items:center;gap:7px}
+.switch{position:relative;width:34px;height:18px;flex:none}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+.switch i{position:absolute;inset:0;background:var(--line);border-radius:9px;transition:background .15s}
+.switch i::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--text-2);transition:transform .15s,background .15s}
+.switch input:checked+i{background:#1f6b3a;box-shadow:0 0 8px rgba(57,255,106,.35)}
+.switch input:checked+i::after{transform:translateX(16px);background:var(--accent)}
+.switch input:focus-visible+i{box-shadow:0 0 0 3px var(--focus)}
+.ramp{height:10px;border-radius:3px;background:linear-gradient(90deg,transparent,var(--heat-1) 15%,var(--heat-2) 40%,var(--heat-3) 65%,var(--heat-4) 85%,var(--heat-5))}
+.ramp-labels{display:flex;justify-content:space-between;font-size:.7rem;color:var(--text-3);font-family:"JetBrains Mono","IBM Plex Mono",monospace}
+.btn{font:inherit;font-size:.82rem;color:var(--text);background:transparent;border:1px solid var(--line);border-radius:var(--radius);padding:7px 12px;cursor:pointer}
+.btn:hover{border-color:var(--text-3)}
+.btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.btn.primary{background:#1f6b3a;border-color:transparent;color:var(--text)}
+.seg{display:flex;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.seg button{flex:1;font:inherit;font-size:.82rem;color:var(--text-2);background:transparent;border:0;padding:7px 0;cursor:pointer}
+.seg button[aria-pressed=true]{background:#1f6b3a;color:var(--text)}
+.seg button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.foot{margin-top:auto;font-size:.72rem;color:var(--text-3);line-height:1.5;border-top:1px solid var(--line);padding-top:12px}
+.foot .stamp{letter-spacing:.06em}
+.foot .stamp::before{content:"> ";color:var(--accent)}
+
+/* ---------- 操作提示 ---------- */
+#keys{position:fixed;right:16px;bottom:16px;z-index:10;display:flex;gap:14px;font-size:.72rem;color:var(--text-3);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 10px;backdrop-filter:blur(8px)}
+#keys kbd{font:inherit;color:var(--text-2);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-right:2px}
+@media (max-width:720px){#keys{display:none}}
+/* ---------- tooltip ---------- */
+#tip{color:var(--text);position:fixed;pointer-events:none;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:8px 11px;font-size:.8rem;line-height:1.45;max-width:260px;display:none;backdrop-filter:blur(8px)}
+#tip b{display:block;font-size:.88rem;margin-bottom:2px;color:var(--accent)}
+#tip .k{color:var(--text-3)}
+
+/* ---------- 方法面板 ---------- */
+#about{position:fixed;inset:0;z-index:30;background:rgba(5,7,10,.72);display:none;align-items:center;justify-content:center;padding:16px;border:0;max-width:none;max-height:none;width:100%;height:100%;margin:0;outline:none}
+#about::backdrop{background:transparent}
+#about[open]{display:flex}
+#about:focus,#about:focus-visible,#about .card:focus,#about .card:focus-visible{outline:none}
+#about{color:var(--text)}
+#about .card{color:var(--text);background:var(--ink-2);border:1px solid var(--line);border-radius:12px;max-width:680px;width:100%;max-height:90vh;overflow:auto;padding:28px 30px}
+#about h3{font-family:"JetBrains Mono","Noto Sans TC",monospace;font-weight:800;font-size:1.3rem;margin:0 0 6px}
+#about h3::before{content:"# ";color:var(--accent)}
+#about h4{font-size:.8rem;letter-spacing:.08em;color:var(--text-2);margin:20px 0 8px}
+#about p,#about li{font-size:.88rem;line-height:1.6;color:var(--text-2)}
+#about table{width:100%;border-collapse:collapse;font-size:.82rem}
+#about td,#about th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--text-2)}
+#about td:first-child{color:var(--text)}
+#about th{color:var(--text-3);font-weight:500}
+#about a{color:var(--sewer-mh)}
+.chart{margin:10px 0 4px}
+.chart svg{width:100%;height:auto;display:block;overflow:visible}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .axis{fill:var(--text-3);font-family:"JetBrains Mono","IBM Plex Mono",monospace;font-size:10px}
+.chart .legend{display:flex;gap:16px;font-size:.78rem;color:var(--text-2);margin:6px 0 2px}
+.chart .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.chart .legend i.dot{width:8px;height:8px;border-radius:50%}
+.chart .cap{font-size:.76rem;color:var(--text-3);line-height:1.5;margin-top:4px}
+.chart .hover{fill:var(--text);font-family:"JetBrains Mono","IBM Plex Mono",monospace;font-size:11px}
+.mono{font-family:"JetBrains Mono","IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+#loading{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:var(--ink);font-family:"JetBrains Mono","IBM Plex Mono",monospace;color:var(--text-2);font-size:.85rem;letter-spacing:.1em;transition:opacity .4s}
+#loading.done{opacity:0;pointer-events:none}
+
+/* ---------- 手機 ---------- */
+@media (max-width:720px){
+  :root{font-size:14px}
+  #panel{left:0;right:0;top:auto;bottom:0;width:auto;max-width:none;max-height:46vh;border-radius:14px 14px 0 0;padding:14px 16px 16px;gap:14px}
+  #panel::before{content:"";display:block;width:40px;height:4px;border-radius:2px;background:var(--line);margin:-4px auto 2px}
+  h1{font-size:1.6rem}
+  .foot{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="loading">載入資料中…</div>
+
+<aside id="panel" aria-label="控制面板">
+  <header>
+    <div class="eyebrow">Taipei · 鼠類活動熱區推估</div>
+    <h1>台北<em>鼠跡</em>圖<span class="cursor" aria-hidden="true"></span></h1>
+    <p class="lede">把<b>污水下水道</b>、<b>雨水下水道</b>、<b>攤販集中場</b>、<b>傳統市場</b>、<b>垃圾車停靠點</b>與<b>餐飲業者</b>疊在一起，看鼠類最可能棲息、覓食、移動的地方。紅光愈亮，條件愈齊；另附鳳頭蒼鷹紀錄作對照。</p>
+  </header>
+
+  <section>
+    <h2>熱力推估 <span class="hint">建置時預先算好</span></h2>
+    <div class="row">
+      <label for="t-heat"><span class="chip glow"></span>顯示熱力層</label>
+      <span class="switch"><input type="checkbox" id="t-heat" checked><i></i></span>
+    </div>
+    <div class="row" style="min-height:0"><span class="count" id="weight-note"></span></div>
+    <div class="ramp" aria-hidden="true"></div>
+    <div class="ramp-labels"><span>低</span><span>推估熱度（相對值）</span><span>高</span></div>
+  </section>
+
+  <section id="base-section">
+    <h2>底圖 <span class="hint" id="base-hint">塊體：行政區擠壓</span></h2>
+    <div class="seg" role="group" aria-label="底圖">
+      <button type="button" id="base-block" aria-pressed="true">塊體</button>
+      <button type="button" id="base-terrain" aria-pressed="false">地形</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>圖層</h2>
+    <div class="row"><label for="t-lines"><span class="chip line" style="background:var(--sewer)"></span>污水管線 <span class="count" id="c-lines"></span></label><span class="switch"><input type="checkbox" id="t-lines" checked><i></i></span></div>
+    <div class="row"><label for="t-sewer"><span class="chip" style="background:var(--sewer-mh)"></span>污水人孔 <span class="count" id="c-sewer"></span></label><span class="switch"><input type="checkbox" id="t-sewer"><i></i></span></div>
+    <div class="row"><label for="t-storm"><span class="chip" style="background:var(--storm)"></span>雨水人孔 <span class="count" id="c-storm"></span></label><span class="switch"><input type="checkbox" id="t-storm" checked><i></i></span></div>
+    <div class="row"><label for="t-market"><span class="chip" style="background:var(--market);box-shadow:0 0 0 2px #1a212e,0 0 0 3px var(--market)"></span>攤販集中場 <span class="count" id="c-market"></span></label><span class="switch"><input type="checkbox" id="t-market" checked><i></i></span></div>
+    <div class="row"><label for="t-garbage"><span class="chip" style="background:var(--garbage)"></span>垃圾車停靠點 <span class="count" id="c-garbage"></span></label><span class="switch"><input type="checkbox" id="t-garbage" checked><i></i></span></div>
+    <div class="row"><label for="t-tmarket"><span class="chip" style="background:var(--tmarket);box-shadow:0 0 0 2px #1a212e,0 0 0 3px var(--tmarket)"></span>傳統市場 <span class="count" id="c-tmarket"></span></label><span class="switch"><input type="checkbox" id="t-tmarket" checked><i></i></span></div>
+    <div class="row"><label for="t-recycle"><span class="chip" style="background:var(--recycle);box-shadow:0 0 0 2px #1a212e,0 0 0 3px var(--recycle)"></span>廚餘限時收受點 <span class="count" id="c-recycle"></span></label><span class="switch"><input type="checkbox" id="t-recycle" checked><i></i></span></div>
+    <div class="row"><label for="t-foodwaste"><span class="chip" style="background:transparent;box-shadow:inset 0 0 0 2px var(--fw-mid)"></span>疑似廚餘暫置點 <span class="count" id="c-foodwaste"></span></label><span class="switch"><input type="checkbox" id="t-foodwaste" checked><i></i></span></div>
+    <div class="row"><label for="t-food"><span class="chip" style="background:var(--food)"></span>餐飲業者 <span class="count" id="c-food"></span></label><span class="switch"><input type="checkbox" id="t-food" checked><i></i></span></div>
+    <div class="row"><label for="t-raptor"><span class="chip" style="background:var(--raptor);box-shadow:0 0 0 2px #1a212e,0 0 0 3px var(--raptor)"></span>鳳頭蒼鷹紀錄 <span class="count" id="c-raptor"></span></label><span class="switch"><input type="checkbox" id="t-raptor"><i></i></span></div>
+    <div class="row" style="min-height:0"><span class="count">點擊行政區可縮放至該區</span></div>
+    <div class="row"><label for="t-labels"><span class="chip" style="background:var(--district);box-shadow:0 0 0 1px var(--district-edge)"></span>行政區標籤</label><span class="switch"><input type="checkbox" id="t-labels" checked><i></i></span></div>
+  </section>
+
+  <div class="actions">
+    <button class="btn" id="btn-reset">重設視角</button>
+    <button class="btn" id="btn-about">資料來源與方法</button>
+  </div>
+
+  <div class="foot">
+    <div class="stamp" id="stamp">資料：臺北市資料大平臺</div>
+    <div>這是以環境條件推估的相對熱度，不是實際捕鼠或通報數。</div>
+  </div>
+</aside>
+
+<div id="tip" role="tooltip"></div>
+<div id="keys" aria-hidden="true"><span><kbd>⌥</kbd> 或 <kbd>右鍵</kbd> + 拖曳 旋轉／傾斜</span><span><kbd>滾輪</kbd> 縮放</span><span><kbd>拖曳</kbd> 平移</span><span><kbd>點擊</kbd> 行政區 縮放至該區</span></div>
+
+<dialog id="about" aria-labelledby="about-title">
+  <div class="card">
+    <h3 id="about-title">資料來源與推估方法</h3>
+    <p>本圖把三種與鼠類棲息、覓食直接相關的環境資料疊在台北市行政區底圖上，並以熱力層呈現三者的加權密度。它回答的是「哪裡的條件最適合老鼠」，而不是「哪裡抓到最多老鼠」。</p>
+
+    <h4>資料來源</h4>
+    <table id="src-table"><thead><tr><th>資料集</th><th>提供機關</th><th>本圖使用筆數</th></tr></thead><tbody></tbody></table>
+    <p>授權皆為「政府資料開放授權條款－第1版」。行政區界由民政局里界圖（456 里）合併而成。</p>
+
+    <h4>推估方法</h4>
+    <ul>
+      <li>污水人孔、雨水人孔、攤販集中場三組點位各自正規化：在 TWD97 公尺座標上以 30 m 像素格化，六組點各自以高斯核平滑（人孔 σ = 250 m、攤販集中場 σ = 450 m、傳統市場 σ = 350 m、垃圾車停靠點 σ = 200 m、餐飲業者 σ = 200 m），再以該組第 99 百分位正規化到 0–1。每個像素的熱度 = 六個密度的加權平均（<span id="w-text"></span>），再套 γ = 1.25 對比後映射到色階。</li>
+      <li>熱力在資料建置階段直接烤成一張帶透明度的 PNG 貼圖，瀏覽器只貼一張圖，縮放時沒有任何重算。污水管線也先烤成貼圖，放大到 zoom 13 以上時改畫 GPU 向量線（約 1.3 MB 二進位檔，背景載入），任何倍率都清晰。</li>
+      <li>餐飲業者合併食藥署「食品業者登錄」餐飲場所、財政部稅籍登記餐飲業（行業代號 56）與衛生局餐飲衛生評核名單，以統編或店名加門牌去重，地址用民政局門牌位置資料在本機轉成座標（98% 精確到門牌，未使用 Google）。同一門牌有 n 家店時貢獻取 √n，避免百貨美食街被過度放大。</li>
+      <li>鳳頭蒼鷹紀錄為疊加對照層，<b>不進熱力權重</b>。猛禽出現在獵物多的地方，且牠在都市的主食是鳥類與松鼠，故不假設「有鷹處老鼠少」。來源為 GBIF（中華鳥會紀錄資料庫、繁殖鳥大調查等，CC BY）與 iNaturalist（僅 CC0 / CC BY 研究等級），精確紀錄畫實心點，中華鳥會資料庫的 1 km 網格紀錄畫 500 m 淡圈，10 km 網格紀錄不畫；標本與路殺紀錄排除；觀察紀錄集中在公園綠地等賞鳥熱點，有觀察者偏差。</li>
+      <li>「地形」底圖用內政部地政司 2025 年臺北市分幅 20 公尺網格 DEM（TWD97 / TWVD2001）重取樣成約 30 m 的高度貼圖，高度放大 1.6 倍以凸顯盆地與周圍山系；圖層以 deck.gl TerrainExtension 貼附地表。台北市中心高程多在 5 到 20 m，地形對熱區沒有解釋力，只作地理脈絡。</li>
+      <li>污水管線資料集本身沒有座標，以上下游端點編號同時對應「污水人孔」與「污水陰井」兩個資料集補回：<span id="join-note"></span>其餘約 100 段無法對應；另有 <span id="badgeom-note"></span> 段因端點編號錯誤（座標距離遠超過申報管線長度）而剔除。陰井只用來補座標，不計入熱力。</li>
+    </ul>
+
+    <h4>通報量的時間脈絡</h4>
+    <div class="chart" id="petition-chart">
+      <div class="legend"><span><i style="background:#39ff6a"></i>環保局水質病媒管制科受理件數（鼠類與蚊蟲，每月）</span><span><i class="dot" style="background:var(--heat-3)"></i>新聞公布的鼠患通報件數</span></div>
+      <svg viewBox="0 0 640 200" role="img" aria-label="環保局病媒科每月受理件數折線圖"></svg>
+      <p class="cap" id="petition-cap"></p>
+    </div>
+    <h4>與分區通報率的比對</h4>
+    <p>把本圖熱力依行政區取平均，和 EcoSentinel 生態守護系統整理的分區指標並列：「鼠患/千宅」是見鼠地圖 2026 年 5 月 814 筆通報除以住宅數；屋齡與住宅密度引自內政部房屋稅籍住宅依屋齡統計（114Q4）。</p>
+    <table id="dist-table"><thead><tr><th>行政區</th><th>熱力均值</th><th>鼠患/千宅</th><th>住宅密度 /km²</th><th>平均屋齡</th></tr></thead><tbody></tbody></table>
+    <p id="dist-stats"></p>
+    <p><b>這個比對的限制：</b>見鼠地圖只有 2026 年 5 月的通報，而且是平台剛上線、新聞熱度最高的一個月，之後通報量明顯下降；通報多寡也受住戶網路使用習慣影響。它只能說明兩者「方向一致」，不能當作長期鼠況，也不能證明本圖抓到了人口密度以外的訊號：本圖熱力與住宅密度的相關更高，見鼠地圖通報率本身也與密度相關。</p>
+    <h4>已知限制</h4>
+    <ul>
+      <li>廚餘限時收受點（環保局公告的民眾自行投放定點，排除備註不收廚餘者）只做圖層，不進熱力。廚餘暫置量與轉運節點沒有公開資料；圖上「疑似廚餘暫置點」8 處轉錄自 EcoSentinel，該站自述 2 處確認、6 處查證中，噸數為推估，本圖未能查證。其中 5 處只有路名，以該街道門牌中位點定位，誤差可達數百公尺；北投焚化廠、木柵焚化廠、大同清潔隊以門牌定位。未納入建物層級屋齡等因子；也沒有實際捕鼠或通報資料做校正。餐飲業者清單含已登錄但可能歇業的店家。垃圾車停靠點是「定時收運的集中點」，不等於垃圾堆置點。</li>
+      <li>臺北市環保局於 2026 年公布的通報熱區為大安、中山、中正、大同、萬華五區，可作為方向性對照，但本圖並未用它校正權重。</li>
+      <li>衛生局「食品業者登錄數」僅有全市總數、食材登錄平台夜市專區無座標，故未使用。</li>
+    </ul>
+    <p class="mono" id="build-note"></p>
+    <div class="actions" style="margin-top:18px"><button class="btn primary" id="btn-close">關閉</button></div>
+  </div>
+</dialog>
+
+<script>
+(async function () {
+  const { Deck, PolygonLayer, PathLayer, ScatterplotLayer, TextLayer, BitmapLayer, WebMercatorViewport, FlyToInterpolator, TerrainLayer, _TerrainExtension, LightingEffect, AmbientLight, DirectionalLight } = deck;
+
+  // 熱力權重在 scripts/build.mjs 的 HEAT.weights 設定，建置時烤成 data/heat.png
+  const BASE_HEIGHT = 220;     // 行政區擠壓高度（公尺）
+  const OVERLAY_Z = BASE_HEIGHT + 4;
+  const VECTOR_ZOOM = 13;   // 此 zoom 以上改畫 GPU 向量線，以下用貼圖
+  const INITIAL_VIEW = { longitude: 121.543, latitude: 25.06, zoom: 11.3, pitch: 38, bearing: -14, minZoom: 10, maxZoom: 16 };
+
+  const $ = (id) => document.getElementById(id);
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const hex = (h, a = 255) => { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255, a]; };
+  const C = {
+    district: hex(css('--district')), edge: hex(css('--district-edge')),
+    sewer: hex(css('--sewer'), 90), sewerMh: hex(css('--sewer-mh'), 80), storm: hex(css('--storm'), 70),
+    market: hex(css('--market')), marketRing: hex('#061009'), food: hex(css('--food'), 120), raptor: hex(css('--raptor')), garbage: hex(css('--garbage'), 150), tmarket: hex(css('--tmarket')), recycle: hex(css('--recycle')), text: hex(css('--text'), 230), hoverEdge: hex('#ffd27a'),
+    heat: [hex(css('--heat-1'), 0), hex(css('--heat-1'), 120), hex(css('--heat-2'), 200), hex(css('--heat-3'), 235), hex(css('--heat-4'), 245), hex(css('--heat-5'), 255)],
+  };
+
+  const load = (f) => fetch('data/' + f).then(r => { if (!r.ok) throw new Error(f + ' ' + r.status); return r.json(); });
+  const [districts, sewerLinesRaster, sewerMh, stormMh, markets, meta] = await Promise.all([
+    load('districts.geojson'), load('sewer_lines.json'), load('sewer_manholes.json'), load('storm_manholes.json'), load('markets.json'), load('meta.json')]);
+  const heat = await load('heat.json');
+  const food = await load('food.json').catch(() => []);
+  const garbage = await load('garbage_stops.json').catch(() => []);   // [lon, lat, 車次, 地點, 行政區]
+  const tmarkets = await load('markets_trad.json').catch(() => []);
+  const recycle = await load('recycle_points.json').catch(() => []);   // 圖層，不進熱力
+  const foodWaste = await load('food_waste_nodes.json').catch(() => ({ nodes: [] }));
+  const terrain = await load('terrain.json').catch(() => null);   // 內政部 20 m DEM 烤成的高度貼圖
+  const cityOutline = await load('city.geojson').catch(() => null);   // 市界外框
+  const plinth = await load('city_plinth.geojson').catch(() => null);   // 底盤外框（外擴 350 m）   // EcoSentinel 轉錄，未證實；圖層，不進熱力
+  const dstats = await load('district_stats.json').catch(() => null);
+  const raptor = await load('raptor.json').catch(() => ({ sources: [], points: [], yearRange: [0, 0] }));   // 疊加圖層，不進熱力
+  const raptorFine = raptor.points, raptorCoarse = raptor.cells || [];   // cells: [lon, lat, 筆數, 最早年, 最近年, srcIdx]
+  const yearT = (d) => raptor.yearRange[1] > raptor.yearRange[0] && d[2] ? (d[2] - raptor.yearRange[0]) / (raptor.yearRange[1] - raptor.yearRange[0]) : 1;   // [lon, lat, 店數, 店名, 類別, 評核, 地址]
+
+  // 熱力資料：三組點各自正規化到「總權重相等」
+  // 熱力：建置階段已烤成 RGBA 貼圖，前端只貼一張圖（加法混合產生發光感）
+  const ADD_BLEND = { blend: true, blendColorOperation: 'add', blendColorSrcFactor: 'src-alpha', blendColorDstFactor: 'one', blendAlphaOperation: 'add', blendAlphaSrcFactor: 'one', blendAlphaDstFactor: 'one' };
+  const heatBounds = heat.bounds.map(([lon, lat]) => [lon, lat, OVERLAY_Z + 1]);
+  const lineBounds = sewerLinesRaster.bounds.map(([lon, lat]) => [lon, lat, OVERLAY_Z]);
+
+  // 各區經緯度範圍（點擊縮放用）
+  const districtBounds = {};
+  for (const f of districts.features) { let w = 180, s = 90, e = -180, n = -90; for (const poly of f.geometry.coordinates) for (const ring of poly) for (const [x, y] of ring) { if (x < w) w = x; if (x > e) e = x; if (y < s) s = y; if (y > n) n = y; } districtBounds[f.properties.name] = [[w, s], [e, n]]; }
+  // MultiPolygon → 每個 polygon 一筆（PolygonLayer 不接受 MultiPolygon 巢狀陣列）
+  const districtPolys = districts.features.flatMap(f => f.geometry.coordinates.map(rings => ({ rings, properties: f.properties })));
+
+  const state = { hover: null, vector: false, vec: null, vecT: null, base: 'block', view: { ...INITIAL_VIEW },   // vec: 向量線資料（背景載入）
+    show: { heat: true, lines: true, sewer: false, storm: true, market: true, food: true, garbage: true, tmarket: true, recycle: true, foodwaste: true, raptor: false, labels: true } };
+
+  const fmt = new Intl.NumberFormat('zh-Hant-TW');
+  $('c-lines').textContent = fmt.format(sewerLinesRaster.segments) + ' 段';
+  $('c-sewer').textContent = fmt.format(sewerMh.length);
+  $('c-storm').textContent = fmt.format(stormMh.length);
+  $('c-market').textContent = fmt.format(markets.length) + ' 處';
+  $('c-food').textContent = fmt.format(meta.counts.foodRows || 0) + ' 家';
+  $('c-garbage').textContent = fmt.format(garbage.length) + ' 處';
+  $('c-tmarket').textContent = fmt.format(tmarkets.length) + ' 處';
+  $('c-recycle').textContent = fmt.format(recycle.length) + ' 處';
+  $('c-foodwaste').textContent = fmt.format(foodWaste.nodes.length) + ' 處 · 未證實';
+  $('c-raptor').textContent = `${fmt.format(meta.counts.raptor || 0)} 筆` + (raptor.yearRange[0] ? ` · ${raptor.yearRange[0]}–${raptor.yearRange[1]}` : '');
+  $('c-raptor').title = `精確點位 ${raptorFine.length}，1 km 網格 ${raptorCoarse.length} 格`;
+  const fetched = meta.fetchedAt ? new Date(meta.fetchedAt) : new Date(meta.builtAt);
+  $('stamp').textContent = `資料：臺北市資料大平臺 · ${fetched.toISOString().slice(0, 10)}`;
+  $('weight-note').textContent = `權重 攤販 ${heat.weights.market} · 傳統市場 ${heat.weights.tmarket ?? '–'} · 垃圾車 ${heat.weights.garbage ?? '–'} · 餐飲 ${heat.weights.food ?? '–'} · 污水 ${heat.weights.sewer} · 雨水 ${heat.weights.storm} · ${heat.cell} m`;
+  $('badgeom-note').textContent = fmt.format(meta.counts.sewerLinesBadGeometry ?? 0);
+  $('w-text').textContent = `攤販 ${heat.weights.market}、傳統市場 ${heat.weights.tmarket ?? '未納入'}、垃圾車停靠點 ${heat.weights.garbage ?? '未納入'}、餐飲 ${heat.weights.food ?? '未納入'}、污水 ${heat.weights.sewer}、雨水 ${heat.weights.storm}`;
+  $('join-note').textContent = `${fmt.format(meta.counts.sewerLines)} / ${fmt.format(meta.counts.sewerLinesRaw)} 段（${(meta.joinRate * 100).toFixed(1)}%）畫出；其中主幹管（人孔對人孔）${fmt.format(meta.counts.sewerLineClass.trunk)} 段、支管 ${fmt.format(meta.counts.sewerLineClass.branch)} 段、接戶管（陰井對陰井）${fmt.format(meta.counts.sewerLineClass.lateral)} 段，圖上以亮度區分，`;
+  $('build-note').textContent = `build ${meta.builtAt.slice(0, 16).replace('T', ' ')}Z · bbox ${meta.bbox.map(n => n.toFixed(3)).join(', ')}`;
+  const tb = $('src-table').querySelector('tbody');
+  const used = { 'sewer_lines.csv': fmt.format(meta.counts.sewerLines) + ' / ' + fmt.format(meta.counts.sewerLinesRaw) + ' 段', 'sewer_manholes.csv': meta.counts.sewerManholes, 'sewer_inlets.csv': fmt.format(meta.counts.sewerInlets) + '（僅補管線端點）', 'storm_manholes.csv': meta.counts.stormManholes, 'markets.csv': fmt.format(meta.counts.markets) + ' 處（原始 ' + meta.counts.marketsRaw + '，去重後）', 'li_boundary.zip': meta.counts.li + ' 里 → 12 區', 'food:fda': '餐飲場所 ' + fmt.format(meta.sources['food:fda']?.rows ?? 0), 'food:fia': '餐飲業 ' + fmt.format(meta.sources['food:fia']?.rows ?? 0), 'food:hygiene': fmt.format(meta.sources['food:hygiene']?.rows ?? 0), 'food:housenum': '地址 → 座標', 'raptor:gbif': fmt.format(meta.sources['raptor:gbif']?.rows ?? 0) + '（疊加，不進熱力）', 'raptor:inat': fmt.format(meta.sources['raptor:inat']?.rows ?? 0) + '（疊加，不進熱力）', 'petition': (meta.sources.petition?.rows ?? '') + '（時間序列，不進熱力）', 'garbage_trucks.csv': fmt.format(meta.counts.garbageStops ?? 0) + ' 個停靠點（' + fmt.format(meta.counts.garbageRows ?? 0) + ' 車次）', 'markets_trad.csv': fmt.format(meta.counts.tradMarkets ?? 0) + ' 處', 'recycle_points.csv': fmt.format(meta.counts.recyclePoints ?? 0) + ' 處收廚餘（原始 ' + (meta.counts.recyclePointsRaw ?? 0) + '；圖層，不進熱力）', 'foodwaste': (meta.counts.foodWasteNodes ?? 0) + ' 處（民間推估、未證實；圖層，不進熱力）', 'dtm': (meta.sources.dtm?.rows ?? '') + '（地形底圖）' };
+  for (const [f, s] of Object.entries(meta.sources)) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><a href="${s.page}" target="_blank" rel="noopener">${s.name}</a></td><td>${s.agency}</td><td class="mono">${typeof used[f] === 'number' ? fmt.format(used[f]) : used[f]}</td>`;
+    tb.appendChild(tr);
+  }
+
+  // 方法面板：陳情系統時間序列折線圖（SVG，單一數列＋對照點）
+  load('petition.json').then(pt => {
+    const svg = document.querySelector('#petition-chart svg'); if (!svg) return;
+    const S = pt.series.filter(r => r[4] != null);          // 有受理科室欄位的月份
+    if (!S.length) { $('petition-cap').textContent = '陳情資料尚未建置（npm run fetch:petition）。'; return; }
+    const W = 640, H = 200, L = 44, R = 12, T = 14, B = 28, iw = W - L - R, ih = H - T - B;
+    const ymax = Math.max(...S.map(r => r[4]), ...S.map(r => r[5] || 0)) * 1.08;
+    const x = (i) => L + iw * i / (S.length - 1), y = (v) => T + ih - ih * v / ymax;
+    const ns = 'http://www.w3.org/2000/svg', el = (t, a, txt) => { const e = document.createElementNS(ns, t); for (const [k, v] of Object.entries(a)) e.setAttribute(k, v); if (txt != null) e.textContent = txt; svg.appendChild(e); return e; };
+    const step = Math.pow(10, Math.floor(Math.log10(ymax / 4))), ystep = [1, 2, 5, 10].map(m => m * step).find(v => ymax / v <= 6) || step;
+    for (let v = 0; v <= ymax; v += ystep) { el('line', { class: 'grid', x1: L, x2: W - R, y1: y(v), y2: y(v) }); el('text', { class: 'axis', x: L - 6, y: y(v) + 3, 'text-anchor': 'end' }, fmt.format(v)); }
+    S.forEach((r, i) => { if (r[1] === 1) { el('line', { class: 'grid', x1: x(i), x2: x(i), y1: T, y2: T + ih, 'stroke-dasharray': '2 3' }); el('text', { class: 'axis', x: x(i), y: H - 10, 'text-anchor': 'middle' }, r[0]); } });
+    el('path', { d: S.map((r, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(r[4]).toFixed(1)).join(' '), fill: 'none', stroke: '#39ff6a', 'stroke-width': 2, 'stroke-linejoin': 'round' });
+    S.forEach((r, i) => { if (r[5] != null) el('circle', { cx: x(i), cy: y(r[5]), r: 4, fill: css('--heat-3'), stroke: css('--ink-2'), 'stroke-width': 2 }); });
+    // 峰值直接標註
+    const peak = S.reduce((m, r, i) => r[4] > S[m][4] ? i : m, 0);
+    el('text', { class: 'hover', x: Math.min(x(peak), W - R - 90), y: y(S[peak][4]) - 8 }, `${S[peak][0]}-${String(S[peak][1]).padStart(2, '0')}：${fmt.format(S[peak][4])} 件`);
+    // hover：顯示該月數值
+    const hv = el('text', { class: 'hover', x: L, y: T - 2, opacity: 0 }); const vline = el('line', { class: 'grid', x1: 0, x2: 0, y1: T, y2: T + ih, opacity: 0, stroke: css('--text-3') });
+    const hit = el('rect', { x: L, y: T, width: iw, height: ih, fill: 'transparent' });
+    hit.addEventListener('mousemove', (e) => { const pt0 = svg.createSVGPoint(); pt0.x = e.clientX; pt0.y = e.clientY; const p = pt0.matrixTransform(svg.getScreenCTM().inverse()); const i = Math.max(0, Math.min(S.length - 1, Math.round((p.x - L) / iw * (S.length - 1)))); const r = S[i];
+      hv.textContent = `${r[0]}-${String(r[1]).padStart(2, '0')}  病媒科 ${fmt.format(r[4])} 件${r[5] != null ? `  ·  公布鼠患 ${r[5]} 件` : ''}  ·  全市陳情 ${fmt.format(r[2])} 件`; hv.setAttribute('opacity', 1); vline.setAttribute('x1', x(i)); vline.setAttribute('x2', x(i)); vline.setAttribute('opacity', 1); });
+    hit.addEventListener('mouseleave', () => { hv.setAttribute('opacity', 0); vline.setAttribute('opacity', 0); });
+    const first = S[0], last = S[S.length - 1];
+    $('petition-cap').textContent = `資料：臺北市陳情系統類別資料（研考會），${first[0]}-${String(first[1]).padStart(2, '0')} 至 ${last[0]}-${String(last[1]).padStart(2, '0')}，共 ${S.length} 個月；更早的月份沒有「受理科室」欄位。此科同時受理鼠類與蚊蟲案件，夏季上升部分來自蚊蟲；2026 年 2 月的尖峰與漢他病毒事件後的鼠患通報潮一致。通報量反映民眾通報意願，不等於鼠類數量。`;
+  }).catch(e => console.warn('petition chart', e.message));
+
+  // 分區比對表
+  if (dstats) {
+    const tb = $('dist-table').querySelector('tbody');
+    for (const r of dstats.rows) { const tr = document.createElement('tr'); tr.innerHTML = `<td>${r.name}</td><td class="mono">${r.meanHeat.toFixed(2)}</td><td class="mono">${r.ratPerK?.toFixed(2) ?? '–'}</td><td class="mono">${r.density ? fmt.format(r.density) : '–'}</td><td class="mono">${r.avgAge?.toFixed(1) ?? '–'}</td>`; tb.appendChild(tr); }
+    const st = dstats.stats;
+    $('dist-stats').innerHTML = `Spearman 等級相關（12 區）：熱力均值 vs 鼠患/千宅 <span class="mono">${st.heat_vs_ratPerK.spearman}</span>；熱力均值 vs 住宅密度 <span class="mono">${st.heat_vs_density.spearman}</span>；鼠患/千宅 vs 住宅密度 <span class="mono">${st.ratPerK_vs_density.spearman}</span>；熱力均值 vs 平均屋齡 <span class="mono">${st.heat_vs_age.spearman}</span>。`;
+  }
+
+  // tooltip
+  const tip = $('tip');
+  function onHover({ object, layer, x, y }) {
+    const lid = layer ? baseId(layer.id) : '';
+    const hv = !object ? null : lid === 'districts' ? object.properties.name : lid === 'storm' ? object[3] : lid === 'markets' ? object.district : state.hover;
+    if (hv !== state.hover) { state.hover = hv; render(); }
+    if (!object) { tip.style.display = 'none'; return; }
+    let html = '';
+    if (lid === 'districts') html = `<b>${object.properties.name}</b><span class="k">${object.properties.li} 里 · ${object.properties.areaKm2} km²</span>`;
+    else if (lid === 'markets') html = `<b>${object.name}</b><span class="k">${object.district} · ${object.range}</span><br><span class="k">營業 ${object.days} ${object.hours}</span>`;
+    else if (lid === 'storm') html = `<b>雨水人孔</b><span class="k">${object[3]} · 深 ${object[2]} m</span>`;
+    else if (lid === 'sewer') html = `<b>污水人孔</b><span class="k">深 ${object[2]} m</span>`;
+    else if (lid === 'raptor-coarse') html = `<b>鳳頭蒼鷹 · 1 km 網格</b><span class="k">${object[2]} 筆紀錄${object[3] ? ` · ${object[3]}–${object[4]}` : ''} · ${raptor.sources[object[5]] || ''}</span>`;
+    else if (lid === 'raptor') html = `<b>鳳頭蒼鷹</b><span class="k">${object[4] || object[2] || '日期不詳'} · ${raptor.sources[object[3]] || ''}${object[5] > 500 ? ' · 1 km 網格紀錄' : object[5] != null ? ' · 座標 ±' + object[5] + ' m' : ''}</span>`;
+    else if (lid === 'garbage') html = `<b>垃圾車停靠點</b><span class="k">${object[3]} · 每日 ${object[2]} 車次</span>`;
+    else if (lid === 'foodwaste') html = `<b>${object.name}　<span class="k">${object.status}</span></b><span class="k">${object.claimed} · ${object.note}</span><br><span class="k">${object.addr} · ${object.accuracy}</span><br><span class="k">EcoSentinel 推估，未經官方證實</span>`;
+    else if (lid === 'recycle') html = `<b>${object.team} 限時收受點</b><span class="k">${object.addr} · ${object.hours}</span>`;
+    else if (lid === 'tmarket') html = `<b>${object.name}</b><span class="k">傳統市場 · ${object.addr}</span>`;
+    else if (lid === 'food') html = `<b>${object[3]}${object[2] > 1 ? `　<span class="k">等 ${object[2]} 家</span>` : ''}</b><span class="k">${[object[4], object[5] && '衛生評核 ' + object[5], object[6]].filter(Boolean).join(' · ')}</span>`;
+    else return;
+    tip.innerHTML = html; tip.style.display = 'block';
+    const pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = Math.min(x + pad, innerWidth - w - 8) + 'px';
+    tip.style.top = (y + pad + h > innerHeight ? y - h - pad : y + pad) + 'px';
+  }
+
+  // hover 節流：避免每個 mousemove 都觸發拾取與重繪
+  let hoverT = 0;
+  const onHoverT = (info) => { const now = performance.now(); if (!info.object && !state.hover && now - hoverT < 50) return; hoverT = now; onHover(info); };
+  const over = { parameters: { depthCompare: 'always', depthWriteEnabled: false } };
+  // 向量線三類：主幹 / 支管 / 接戶管，顏色對應貼圖亮度
+  const VEC_CLASSES = [
+    { id: 'trunk',   color: hex(css('--sewer'), 210), width: 1.8 },
+    { id: 'branch',  color: hex(css('--sewer'), 140), width: 1.3 },
+    { id: 'lateral', color: hex(css('--sewer'), 90),  width: 1.0 },
+  ];
+  async function loadVector() {
+    const buf = await fetch(sewerLinesRaster.vector).then(r => { if (!r.ok) throw new Error('vector ' + r.status); return r.arrayBuffer(); });
+    const n = new DataView(buf).getUint32(0, true);
+    const f = new Float32Array(buf, 4, n * 4), k = new Uint8Array(buf, 4 + n * 16, n);
+    const [ox, oy] = sewerLinesRaster.origin;
+    const counts = [0, 0, 0]; for (let i = 0; i < n; i++) counts[k[i]]++;
+    // 每點 XYZ，z = OVERLAY_Z：與點位、貼圖同高，否則傾斜視角下會與塊體頂面的標記錯位
+    const build = (z) => { const pos = counts.map(c => new Float64Array(c * 6)), idx = [0, 0, 0];
+      for (let i = 0; i < n; i++) { const c = k[i], o = idx[c]; const p = pos[c];
+        p[o] = ox + f[i * 4]; p[o + 1] = oy + f[i * 4 + 1]; p[o + 2] = z; p[o + 3] = ox + f[i * 4 + 2]; p[o + 4] = oy + f[i * 4 + 3]; p[o + 5] = z; idx[c] += 6; }
+      // deck.gl 二進位格式：每段 2 點，startIndices 指向各段起點
+      return counts.map((c, j) => { const si = new Uint32Array(c + 1); for (let i = 0; i <= c; i++) si[i] = i * 2;
+        return { length: c, startIndices: si, attributes: { getPath: { value: pos[j], size: 3 } } }; }); };
+    state.vec = build(OVERLAY_Z);      // 塊體模式：塊體頂面
+    state.vecT = build(TERRAIN_Z);     // 地形模式：地表加小偏移（由 TerrainExtension 貼地）
+    render();
+  }
+
+  // 點擊行政區：以該區範圍 fitBounds，保留目前 pitch / bearing，飛行過去
+  function zoomToDistrict(name) {
+    const b = districtBounds[name]; if (!b) return;
+    const mobile = matchMedia('(max-width: 720px)').matches;
+    const panel = $('panel').getBoundingClientRect();
+    const padding = mobile ? { top: 40, bottom: Math.round(panel.height) + 24, left: 24, right: 24 } : { top: 60, bottom: 60, left: Math.round(panel.right) + 48, right: 60 };
+    const vp = new WebMercatorViewport({ width: innerWidth, height: innerHeight });
+    const { longitude, latitude, zoom } = vp.fitBounds(b, { padding });
+    setView({ ...state.view, longitude, latitude, zoom: Math.min(zoom, 14.5), transitionDuration: 900, transitionInterpolator: new FlyToInterpolator({ speed: 1.4 }), transitionEasing: t => 1 - Math.pow(1 - t, 3) });
+  }
+
+  const fwColor = (st) => st === '嚴重' ? hex(css('--fw-severe')).slice(0, 3) : st === '已改善' ? hex(css('--fw-ok')).slice(0, 3) : hex(css('--fw-mid')).slice(0, 3);
+
+  const TERRAIN_Z = 4;                      // 地形模式：點位離地表的偏移（公尺）
+  const terrainOK = !!(terrain && TerrainLayer && _TerrainExtension);
+  if (!terrainOK) $('base-section').style.display = 'none';
+  const terrainExt = terrainOK ? [new _TerrainExtension()] : [];
+  const isT = () => state.base === 'terrain' && terrainOK;
+  // 各模式的點位高度與繪圖參數：塊體模式畫在塊體頂面且不做深度測試；地形模式貼地並正常深度測試
+  const OZ = () => isT() ? TERRAIN_Z : OVERLAY_Z;
+  const ov = () => isT() ? { extensions: terrainExt } : over;
+  const drape = () => isT() ? { extensions: terrainExt, terrainDrawMode: 'drape' } : over;
+  const EX = terrain?.exaggeration ?? 1.5;
+  // 地形貼圖每次換新，TerrainLayer 會重建高度圖；已存在的貼地圖層會綁著舊圖而消失。
+  // 解法：貼地圖層的 id 加上世代號，貼圖更新時換新實例重新綁定；TerrainLayer 本身不重建、不閃爍。
+  let texGen = 0;
+  const G = () => isT() ? '-g' + texGen : '';
+  const baseId = (id) => id.replace(/-g\d+$/, '');
+  // 地形貼圖：把底色、行政區、管線貼圖、熱力貼圖依各自四角座標合成到地形範圍（deck.gl 的貼地擴充對 BitmapLayer 無效，故自行合成）
+  const texImgs = {}; const loadImg = (src) => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = src; });
+  let texCanvas = null, texKey = '', texBitmap = null;
+  async function terrainTexture() {
+    if (!terrainOK) return null;
+    const key = `${state.show.heat}|${state.show.lines && !(state.vector && state.vec)}`;
+    if (key === texKey && texBitmap) return texBitmap;
+    if (!texImgs.heat) { [texImgs.heat, texImgs.lines] = await Promise.all([loadImg(heat.image), loadImg(sewerLinesRaster.image)]); }
+    const [W, S, E, N] = terrain.bounds, cw = terrain.width, ch = terrain.height;
+    if (!texCanvas) { texCanvas = document.createElement('canvas'); texCanvas.width = cw; texCanvas.height = ch; }
+    const ctx = texCanvas.getContext('2d');
+    const px = (lon, lat) => [(lon - W) / (E - W) * cw, (N - lat) / (N - S) * ch];
+    // 市界以外保持全透明：TerrainLayer 畫到透明像素就不顯示，地形因此沿市界切成一塊
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.clearRect(0, 0, cw, ch);
+    ctx.save();
+    ctx.beginPath();
+    for (const d of districtPolys) for (const ring of d.rings) { ring.forEach(([x, y], i) => { const [a, b] = px(x, y); i ? ctx.lineTo(a, b) : ctx.moveTo(a, b); }); ctx.closePath(); }
+    ctx.clip('evenodd');
+    ctx.fillStyle = '#0a140d'; ctx.fillRect(0, 0, cw, ch);
+    // 行政區：填色略亮 + 邊線
+    ctx.fillStyle = 'rgba(18,42,26,0.92)'; ctx.strokeStyle = 'rgba(70,190,110,0.9)'; ctx.lineWidth = 1.2;
+    for (const d of districtPolys) { ctx.beginPath(); for (const ring of d.rings) ring.forEach(([x, y], i) => { const [a, b] = px(x, y); i ? ctx.lineTo(a, b) : ctx.moveTo(a, b); }); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    // 以四角座標（左下、左上、右上、右下）把貼圖做仿射變換貼上
+    const drawQuad = (img, bounds, op, alpha) => { const [bl, tl, tr] = bounds.map(([x, y]) => px(x, y)); const w = img.width, h = img.height;
+      ctx.save(); ctx.globalCompositeOperation = op; ctx.globalAlpha = alpha;
+      ctx.setTransform((tr[0] - tl[0]) / w, (tr[1] - tl[1]) / w, (bl[0] - tl[0]) / h, (bl[1] - tl[1]) / h, tl[0], tl[1]);
+      ctx.drawImage(img, 0, 0); ctx.restore(); };
+    if (state.show.lines && !(state.vector && state.vec)) drawQuad(texImgs.lines, sewerLinesRaster.bounds, 'source-over', 0.9);
+    if (state.show.heat) drawQuad(texImgs.heat, heat.bounds, 'lighter', 1);
+    ctx.restore();
+    // 市界外框描邊（只描外框，內部區界維持細線）
+    if (cityOutline) { const polys = cityOutline.geometry.type === 'MultiPolygon' ? cityOutline.geometry.coordinates : [cityOutline.geometry.coordinates];
+      ctx.strokeStyle = 'rgba(57,255,106,0.7)'; ctx.lineWidth = 1.5; ctx.beginPath();
+      for (const poly of polys) { poly[0].forEach(([x, y], i) => { const [a, b] = px(x, y); i ? ctx.lineTo(a, b) : ctx.moveTo(a, b); }); ctx.closePath(); }
+      ctx.stroke(); }
+    texBitmap = await createImageBitmap(texCanvas); texKey = key; texGen++;
+    return texBitmap;
+  }
+  let texPending = false;
+  // 貼圖換新後地形高度圖會重建，貼地的點位圖層在那一幀拿不到綁定；延後再重繪兩次把它們補回來
+  // 地形貼圖更新後，TerrainLayer 會重建高度圖；已存在的貼地圖層仍綁著舊圖而消失，必須清空後重建圖層實例
+  const rerender = () => { render(); setTimeout(render, 300); };
+  const refreshTexture = () => { if (!isT() || texPending) return; texPending = true; terrainTexture().then(() => { texPending = false; rerender(); }).catch(e => { texPending = false; console.warn('terrain texture', e.message); }); };
+
+  // ---------- 底盤（遊戲立體地圖的基座）與地形裙邊 ----------
+  const PLINTH_D = 180;   // 地形模式基座厚度（公尺）；塊體模式沒有基座
+  const polysOf = (g) => !g ? [] : (g.geometry.type === 'MultiPolygon' ? g.geometry.coordinates : [g.geometry.coordinates]);
+  const plinthPolys = polysOf(cityOutline || plinth).map(rings => ({ rings: rings.map(r => r.map(([x, y]) => [x, y, -PLINTH_D])) }));   // 基座輪廓 = 市界
+  // 解碼高度貼圖供裙邊取樣（Terrarium：h = R*256 + G + B/256 − 32768，乘上放大倍率）
+  let hGrid = null;
+  async function loadHeights() {
+    if (hGrid || !terrainOK) return hGrid;
+    const im = await loadImg(terrain.image); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+    const d = c.getContext('2d', { willReadFrequently: true }); d.drawImage(im, 0, 0); const px = d.getImageData(0, 0, im.width, im.height).data;
+    hGrid = { w: im.width, h: im.height, data: px };
+    return hGrid;
+  }
+  const heightAt = (lon, lat) => { if (!hGrid) return 0; const [W, S, E, N] = terrain.bounds; const i = Math.min(hGrid.w - 1, Math.max(0, Math.round((lon - W) / (E - W) * hGrid.w - .5))), j = Math.min(hGrid.h - 1, Math.max(0, Math.round((N - lat) / (N - S) * hGrid.h - .5))); const o = (j * hGrid.w + i) * 4; const h = hGrid.data[o] * 256 + hGrid.data[o + 1] + hGrid.data[o + 2] / 256 - 32768; return Math.max(0, h) * EX; };
+  let skirt = null;
+  function buildSkirt() {   // 沿市界每一段做一條 2 m 寬的細帶，從基座底擠壓到該段地形高度；擠壓的側面就是牆
+    if (!cityOutline || !hGrid) return [];
+    const strips = []; const WIDTH = 2, MAXSEG = 40;
+    for (const rings of polysOf(cityOutline)) for (const ring of rings) for (let k = 0; k < ring.length - 1; k++) {
+      const [ax, ay] = ring[k], [bx, by] = ring[k + 1];
+      const mPerDegX = 111320 * Math.cos(ay * Math.PI / 180), mPerDegY = 110574;
+      const dx = (bx - ax) * mPerDegX, dy = (by - ay) * mPerDegY, len = Math.hypot(dx, dy); if (len < 0.5) continue;
+      const nx = dy / len, ny = -dx / len;                                   // 水平法向量
+      const ox = nx * WIDTH / mPerDegX, oy = ny * WIDTH / mPerDegY;         // 帶寬
+      const n = Math.max(1, Math.ceil(len / MAXSEG));
+      for (let i = 0; i < n; i++) {
+        const t0 = i / n, t1 = (i + 1) / n;
+        const x1 = ax + (bx - ax) * t0, y1 = ay + (by - ay) * t0, x2 = ax + (bx - ax) * t1, y2 = ay + (by - ay) * t1;
+        const h = Math.max(heightAt((x1 + x2) / 2, (y1 + y2) / 2), 0) + 2;
+        strips.push({ rings: [[[x1, y1, -PLINTH_D], [x2, y2, -PLINTH_D], [x2 + ox, y2 + oy, -PLINTH_D], [x1 + ox, y1 + oy, -PLINTH_D], [x1, y1, -PLINTH_D]]], height: h + PLINTH_D });
+      }
+    }
+    return strips;
+  }
+
+  function layers() {
+    const s = state.show;
+    return [
+      // 底盤：市界外擴 350 m 的基座，從 −420 m 擠壓到 0 m；兩種模式都有
+      ...(isT() && plinthPolys.length ? [new PolygonLayer({ id: 'plinth', data: plinthPolys, extruded: false, getPolygon: d => d.rings,
+        getFillColor: [12, 34, 20], getLineColor: [57, 255, 106, 120], stroked: true, lineWidthMinPixels: 1,
+        material: { ambient: .6, diffuse: .45, shininess: 6, specularColor: [8, 24, 14] } })] : []),   // 只在地形模式畫底蓋，牆面由裙邊一體成型；塊體模式沒有基座
+      // 地形裙邊：補地形邊緣與基座之間的縫
+      ...(isT() && skirt ? [new PolygonLayer({ id: 'skirt', data: skirt, extruded: true, getPolygon: d => d.rings, getElevation: d => d.height,
+        getFillColor: [16, 52, 30], material: { ambient: .6, diffuse: .5, shininess: 6, specularColor: [8, 24, 14] } })] : []),
+      ...(isT() ? [
+        // 地形模式：DEM 網格（放大 EX 倍）當底，行政區以半透明色塊貼地
+        new TerrainLayer({ id: 'terrain', elevationData: terrain.image, bounds: terrain.bounds, meshMaxError: 5,
+          elevationDecoder: { rScaler: 256 * EX, gScaler: EX, bScaler: EX / 256, offset: -32768 * EX },
+          texture: texBitmap, color: [10, 22, 14], material: { ambient: .7, diffuse: .45, shininess: 4, specularColor: [6, 14, 8] }, operation: 'terrain+draw' }),
+        new PolygonLayer({ id: 'districts' + G(), data: districtPolys, extruded: false, getPolygon: d => d.rings,
+          getFillColor: [0, 0, 0, 0], stroked: false, pickable: true, onHover: onHoverT, extensions: terrainExt, terrainDrawMode: 'drape' }),   // 填色已合成進地形貼圖，此層只負責拾取
+        new PathLayer({ id: 'district-hover' + G(), data: districtPolys.filter(d => d.properties.name === state.hover),
+          getPath: d => d.rings[0], getColor: C.hoverEdge, widthUnits: 'pixels', getWidth: 2.5, jointRounded: true, capRounded: true, extensions: terrainExt, terrainDrawMode: 'drape' }),
+      ] : [
+        new PolygonLayer({ id: 'districts' + G(), data: districtPolys, extruded: true, getElevation: BASE_HEIGHT,
+          getPolygon: d => d.rings,
+          getFillColor: C.district, getLineColor: C.edge, wireframe: true, material: { ambient: .6, diffuse: .5, shininess: 6, specularColor: [10, 30, 18] },
+          pickable: true, onHover: onHoverT }),
+        new PathLayer({ id: 'district-hover' + G(), data: districtPolys.filter(d => d.properties.name === state.hover),
+          getPath: d => d.rings[0].map(([x, y]) => [x, y, BASE_HEIGHT + 2]), getColor: C.hoverEdge, widthUnits: 'pixels', getWidth: 2.5,
+          jointRounded: true, capRounded: true, ...over }),
+      ]),
+      new BitmapLayer({ id: 'lines' + G(), visible: s.lines && !(state.vector && state.vec) && !isT(), image: sewerLinesRaster.image, bounds: isT() ? sewerLinesRaster.bounds : lineBounds, textureParameters: { minFilter: 'linear', magFilter: 'linear' }, ...drape() }),
+      ...(state.vec ? VEC_CLASSES.map((c, k) => new PathLayer({ id: 'lines-vec-' + c.id + G(), visible: s.lines && state.vector,
+        data: (isT() ? state.vecT : state.vec)[k], _pathType: 'open', positionFormat: 'XYZ', getColor: c.color, widthUnits: 'pixels', getWidth: c.width, widthMinPixels: c.width, ...ov() })) : []),
+      new ScatterplotLayer({ id: 'sewer' + G(), data: sewerMh, visible: s.sewer, getPosition: d => [d[0], d[1], OZ()], getFillColor: C.sewerMh,
+        radiusUnits: 'pixels', getRadius: 1.3, pickable: true, onHover: onHoverT, ...ov() }),
+      new ScatterplotLayer({ id: 'storm' + G(), data: stormMh, visible: s.storm, getPosition: d => [d[0], d[1], OZ()], getFillColor: C.storm,
+        radiusUnits: 'pixels', getRadius: 1.4, pickable: true, onHover: onHoverT, ...ov() }),
+      new BitmapLayer({ id: 'heat' + G(), visible: s.heat && !isT(), image: heat.image, bounds: isT() ? heat.bounds : heatBounds, textureParameters: { minFilter: 'linear', magFilter: 'linear' },
+        parameters: isT() ? {} : { ...over.parameters, ...ADD_BLEND }, ...(isT() ? { extensions: terrainExt, terrainDrawMode: 'drape' } : {}) }),   // 地形模式貼地時用一般混合（加法混合在貼地繪製中無效）
+      new ScatterplotLayer({ id: 'garbage' + G(), data: garbage, visible: s.garbage, getPosition: d => [d[0], d[1], OZ() + 1], getFillColor: C.garbage,
+        radiusUnits: 'meters', getRadius: 9, radiusMinPixels: 0.8, radiusMaxPixels: 5, pickable: true, onHover: onHoverT, ...ov() }),
+      // 疑似廚餘暫置點：空心圈，半徑依宣稱噸數（√t）放大，顏色依該站的嚴重度；不進熱力
+      new ScatterplotLayer({ id: 'foodwaste' + G(), data: foodWaste.nodes, visible: s.foodwaste, getPosition: d => [d.lon, d.lat, OZ() + 2], updateTriggers: { getPosition: [state.base] },
+        filled: true, getFillColor: d => [...fwColor(d.status), 28], stroked: true, getLineColor: d => [...fwColor(d.status), 230], lineWidthUnits: 'pixels', getLineWidth: 2,
+        radiusUnits: 'meters', getRadius: d => 90 + 9 * Math.sqrt(d.tons), radiusMinPixels: 7, pickable: true, onHover: onHoverT, ...ov() }),
+      new ScatterplotLayer({ id: 'recycle' + G(), data: recycle, visible: s.recycle, getPosition: d => [d.lon, d.lat, OZ() + 2], updateTriggers: { getPosition: [state.base] }, getFillColor: C.recycle,
+        getLineColor: C.marketRing, stroked: true, lineWidthUnits: 'pixels', getLineWidth: 2, radiusUnits: 'pixels', getRadius: 5, radiusMinPixels: 4, pickable: true, onHover: onHoverT, ...ov() }),
+      new ScatterplotLayer({ id: 'tmarket' + G(), data: tmarkets, visible: s.tmarket, getPosition: d => [d.lon, d.lat, OZ() + 2], updateTriggers: { getPosition: [state.base] }, getFillColor: C.tmarket,
+        getLineColor: C.marketRing, stroked: true, lineWidthUnits: 'pixels', getLineWidth: 2, radiusUnits: 'pixels', getRadius: 5, radiusMinPixels: 4, pickable: true, onHover: onHoverT, ...ov() }),
+      new ScatterplotLayer({ id: 'food' + G(), data: food, visible: s.food, getPosition: d => [d[0], d[1], OZ() + 1], getFillColor: C.food,
+        radiusUnits: 'meters', getRadius: d => 7 + 4 * Math.log(d[2]), radiusMinPixels: 0.6, radiusMaxPixels: 7, pickable: true, onHover: onHoverT, ...ov() }),
+      // 鳳頭蒼鷹：1 km 網格紀錄（不確定度 500–1000 m）畫 500 m 淡圈，精確紀錄畫實心點；年份愈新愈亮
+      new ScatterplotLayer({ id: 'raptor-coarse' + G(), data: raptorCoarse, visible: s.raptor, getPosition: d => [d[0], d[1], OZ() + 2],
+        filled: true, getFillColor: d => [...C.raptor.slice(0, 3), Math.round(10 + 12 * Math.log(d[2]))], stroked: true, getLineColor: d => [...C.raptor.slice(0, 3), Math.round(60 + 90 * yearT([0, 0, d[4]]))],
+        lineWidthUnits: 'pixels', getLineWidth: 1, radiusUnits: 'meters', getRadius: 500, radiusMinPixels: 3, pickable: true, onHover: onHoverT, ...ov() }),
+      new ScatterplotLayer({ id: 'raptor' + G(), data: raptorFine, visible: s.raptor, getPosition: d => [d[0], d[1], OZ() + 3],
+        getFillColor: d => [...C.raptor.slice(0, 3), Math.round(90 + 165 * yearT(d))],
+        getLineColor: C.marketRing, stroked: true, lineWidthUnits: 'pixels', getLineWidth: 1, radiusUnits: 'pixels', getRadius: 3.2, radiusMinPixels: 2.5,
+        pickable: true, onHover: onHoverT, ...ov() }),
+      new ScatterplotLayer({ id: 'markets' + G(), data: markets, visible: s.market, getPosition: d => [d.lon, d.lat, OZ() + 2], updateTriggers: { getPosition: [state.base] }, getFillColor: C.market,
+        getLineColor: C.marketRing, stroked: true, lineWidthUnits: 'pixels', getLineWidth: 2, radiusUnits: 'pixels', getRadius: 5, radiusMinPixels: 4,
+        pickable: true, onHover: onHoverT, ...ov() }),
+      new TextLayer({ id: 'labels' + G(), data: districts.features, visible: s.labels, getPosition: f => [...f.properties.centroid, OZ() + 30], updateTriggers: { getPosition: [state.base] },
+        getText: f => f.properties.name, getColor: C.text, getSize: 14, fontFamily: 'JetBrains Mono, Noto Sans TC, monospace', fontWeight: 700,
+        characterSet: 'auto', outlineWidth: 3, outlineColor: [4, 7, 5, 230], fontSettings: { sdf: true }, billboard: true, ...ov(), parameters: over.parameters })   // 標籤永遠在最上層，不被山體遮住,
+    ];
+  }
+
+  // 燈光：塊體模式完全平光（只有環境光）；地形模式用柔和方向光讓山體有起伏
+  const lightFlat = new LightingEffect({ ambient: new AmbientLight({ color: [255, 255, 255], intensity: 1.9 }) });
+  const lightSoft = new LightingEffect({
+    ambient: new AmbientLight({ color: [255, 255, 255], intensity: 1.3 }),
+    dir: new DirectionalLight({ color: [200, 255, 215], intensity: 0.75, direction: [-1, -3, -1] }) });
+  const lighting = lightFlat;
+
+  // 受控 viewState：使用者操作與程式設定都經過 setView，zoom 門檻在這裡判斷
+  function setView(vs) { state.view = vs; const v = vs.zoom >= VECTOR_ZOOM; if (v !== state.vector) { state.vector = v; dk.setProps({ viewState: vs, layers: layers() }); refreshTexture(); } else dk.setProps({ viewState: vs }); }
+  const dk = new Deck({ parent: $('map'), viewState: state.view, controller: { inertia: 250, dragRotate: true, touchRotate: true, maxPitch: 75 }, layers: layers(), effects: [lighting],
+    onViewStateChange: ({ viewState }) => setView(viewState),
+    // 點擊地圖任一處：以游標下方的行政區為準縮放（點位疊在區塊上也能作用）
+    onClick: (info) => { const d = dk.pickObject({ x: info.x, y: info.y, layerIds: ['districts' + G()], radius: 1 }); if (d && d.object) zoomToDistrict(d.object.properties.name); },
+    parameters: { clearColor: [4 / 255, 7 / 255, 5 / 255, 1] }, getCursor: ({ isHovering }) => isHovering ? 'pointer' : 'grab',
+    useDevicePixels: matchMedia('(max-width: 720px)').matches ? 1 : Math.min(devicePixelRatio, 1.5), onLoad: () => $('loading').classList.add('done') });
+  const render = () => dk.setProps({ layers: layers() });
+  loadVector().catch(e => console.warn('向量線載入失敗，維持貼圖：', e.message));
+
+  // controls
+  for (const k of Object.keys(state.show)) $('t-' + k).addEventListener('change', e => { state.show[k] = e.target.checked; render(); if (k === 'heat' || k === 'lines') refreshTexture(); });
+  $('btn-reset').addEventListener('click', () => setView({ ...INITIAL_VIEW, transitionDuration: 700, transitionInterpolator: new FlyToInterpolator({ speed: 1.4 }) }));
+  window.__zoomToDistrict = zoomToDistrict;
+  const about = $('about');
+  $('btn-about').addEventListener('click', () => about.showModal());
+  $('btn-close').addEventListener('click', () => about.close());
+  about.addEventListener('click', e => { if (e.target === about) about.close(); });
+  const setBase = (m) => { state.base = m; dk.setProps({ effects: [m === 'terrain' ? lightSoft : lightFlat] }); if (m === 'terrain') { refreshTexture(); setTimeout(rerender, 800); if (!skirt) loadHeights().then(() => { skirt = buildSkirt(); render(); }).catch(e => console.warn('skirt', e.message)); } $('base-block').setAttribute('aria-pressed', m === 'block'); $('base-terrain').setAttribute('aria-pressed', m === 'terrain');
+    $('base-hint').textContent = m === 'terrain' ? `地形：20 m DEM，高度 ×${EX}` : '塊體：行政區擠壓'; render(); };
+  $('base-block').addEventListener('click', () => setBase('block')); $('base-terrain').addEventListener('click', () => setBase('terrain'));
+  window.__state = state; window.__deck = dk; window.__setView = setView; window.__setBase = setBase;
+})().catch(e => { document.getElementById('loading').textContent = '載入失敗：' + e.message; console.error(e); });
+</script>
+</body>
+</html>

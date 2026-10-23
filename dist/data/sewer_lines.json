@@ -1,0 +1,1 @@
+{"image":"data/sewer_lines.png","width":1623,"height":2003,"cell":10,"bounds":[[121.46383,24.97221],[121.46451,25.15305],[121.62549,25.15245],[121.62458,24.97163]],"segments":77330,"segmentsRaw":77603,"classes":{"trunk":30033,"branch":9267,"lateral":38030},"vector":"data/sewer_lines.bin","origin":[121.5,25.05]}
