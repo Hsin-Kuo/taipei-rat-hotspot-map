@@ -3,7 +3,7 @@
 import { themeOverviewHtml } from './themes.js';
 import { $ } from './util.js';
 
-export function createStage(app, scenario) {
+export function createStage(app, scenario, { interactive = true } = {}) {
   const { scene, villages } = app, T = scene.THREE;
   const main = () => app.allTasks.find(t => t.id === scenario.mainTask);
   const focus = scenario.scope[1] ?? scenario.scope[0];                     // 星明里（寧夏夜市所在）
@@ -42,12 +42,16 @@ export function createStage(app, scenario) {
     chip.innerHTML = `<b>${cur + 1}/${STEPS.length}</b> ${STEPS[cur].label}`;
     chip.hidden = false;
   }
-  addEventListener('keydown', (e) => {
-    if (e.target.closest?.('input, select, textarea') || e.altKey || e.metaKey || e.ctrlKey) return;
-    if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); go(cur + 1); }
-    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(cur - 1); }
-  });
-  chip.hidden = false;
-  chip.innerHTML = '按 <kbd>→</kbd> 開始（<kbd>←</kbd> 退回）';
-  return { go, get step() { return cur; }, steps: STEPS };
+  if (interactive) {
+    addEventListener('keydown', (e) => {
+      if (e.target.closest?.('input, select, textarea') || e.altKey || e.metaKey || e.ctrlKey) return;
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); go(cur + 1); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(cur - 1); }
+    });
+    chip.hidden = false;
+    chip.innerHTML = '按 <kbd>→</kbd> 開始（<kbd>←</kbd> 退回）';
+  }
+  // 影片模式：只執行步驟，不顯示步驟提示
+  const run = (i) => { cur = i; STEPS[i].go(); };
+  return { go, run, get step() { return cur; }, steps: STEPS, closeAll, atVillage, pose, setCheck, setMode, HOME };
 }

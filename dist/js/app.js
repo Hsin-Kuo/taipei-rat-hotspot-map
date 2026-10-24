@@ -15,6 +15,7 @@ import { createSpray } from './spray.js';
 import { themeSelect } from './themes.js';
 import { createPhone } from './phone.js';
 import { createStage } from './demo.js';
+import { createVideo } from './video.js';
 import { PERSONAS } from './params.js';
 import { $, taipeiToday } from './util.js';
 
@@ -174,7 +175,7 @@ async function main() {
   app.phone?.update(app.day);
   // 情境模式：台上逐步（→ / ←）；影片自動模式見 &script=video
   const SCRIPT = new URLSearchParams(location.search).get('script') || new URLSearchParams(location.hash.slice(1)).get('script');
-  if (DEMO && SCRIPT !== 'video') app.stage = createStage(app, DEMO);
+  if (DEMO) SCRIPT === 'video' ? app.video = createVideo(app, DEMO) : app.stage = createStage(app, DEMO);
   $('loading').classList.add('done');
   Object.assign(app, { recomputeEnv, recomputeSim, redraw, timeline, applyTimelineVisible, E });
   window.__app = app;
