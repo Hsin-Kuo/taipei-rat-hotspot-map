@@ -146,6 +146,8 @@ async function main() {
   app.taskTable = createTaskTable(app);
   app.newTask = (codes) => tasks.newTask(codes);
   app.openTask = (id) => tasks.openTask(id);
+  // 新增地點：功能尚未實作，先提示
+  $('btn-add-place').addEventListener('click', () => { $('add-place-msg').hidden = false; });
   themeSelect($('theme'));     // 目前只有鼠類可選，其餘主題顯示「待整合」
   const sel = $('persona');
   sel.innerHTML = PERSONAS.map(p => `<option value="${p.id}">${p.name}</option>`).join('');

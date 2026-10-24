@@ -58,9 +58,9 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px rgba(47,125,79,.35)}
 .ramp{height:9px;border-radius:5px;background:linear-gradient(90deg,var(--heat-1) 0%,var(--heat-1) 40%,var(--heat-2) 55%,var(--heat-3) 78%,var(--heat-4))}
 .ramp-labels{display:flex;justify-content:space-between;font-size:.7rem;color:var(--text-3)}
-.legend{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font-size:.78rem;color:var(--text-2)}
+.legend{display:grid;grid-template-columns:repeat(3,auto);gap:4px 12px;font-size:.72rem;color:var(--text-2)}
 .legend span{display:flex;align-items:center;gap:7px}
-.legend i{width:14px;height:10px;border-radius:3px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.legend i{width:12px;height:9px;border-radius:3px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
 .btn{font:inherit;font-size:.82rem;color:var(--text);background:#fff;border:1px solid var(--line-2);border-radius:8px;padding:6px 12px;cursor:pointer;text-decoration:none}
 .btn:hover{border-color:var(--accent)}
@@ -73,7 +73,11 @@ input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px rgba(
 #keys{position:fixed;right:16px;bottom:16px;z-index:10;display:flex;gap:14px;font-size:.72rem;color:var(--text-2);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 10px}
 #keys kbd{font:inherit;font-size:.7rem;color:var(--text);background:#fff;border:1px solid var(--line-2);border-radius:4px;padding:0 4px;margin-right:2px}
 #stats{position:fixed;right:16px;top:16px;z-index:10;font-size:.7rem;color:var(--text-3);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-variant-numeric:tabular-nums}
-#credit{position:fixed;right:16px;bottom:52px;z-index:10;font-size:.66rem;color:var(--text-3);text-shadow:0 0 3px #fff}
+#surface{position:fixed;right:16px;bottom:52px;z-index:10;background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:10px;padding:7px 10px 6px;max-width:320px}
+#credit{margin-top:5px;font-size:.6rem;line-height:1.4;color:var(--text-3)}
+.h2-act{display:flex;align-items:center;justify-content:space-between}
+.add{font:inherit;font-size:.95rem;line-height:1;width:22px;height:22px;padding:0;border-radius:6px;border:1px solid var(--line-2);background:#fff;color:var(--accent);cursor:pointer}
+.add:hover{border-color:var(--accent)} .add:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 .seg{display:grid;grid-template-columns:1fr 1fr;background:#eee8dc;border-radius:8px;padding:2px}
 .seg label{position:relative;cursor:pointer}
 .seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
@@ -100,7 +104,7 @@ input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px rgba(
 .tl-range{position:absolute;left:0;right:0;bottom:0;width:100%;background:transparent}
 .tl-scale{position:relative;display:flex;justify-content:space-between;font-size:.68rem;color:var(--text-3);font-variant-numeric:tabular-nums}
 .tl-now{position:absolute;transform:translateX(-50%);color:var(--accent);font-weight:700}
-body.has-timeline #keys{bottom:110px} body.has-timeline #credit{bottom:146px}
+body.has-timeline #keys{bottom:110px} body.has-timeline #surface{bottom:146px}
 .card{position:fixed;right:16px;top:56px;width:340px;max-width:calc(100vw - 32px);max-height:calc(100vh - 200px);overflow-y:auto;z-index:11;background:var(--panel);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:14px;padding:16px 16px 12px;box-shadow:0 10px 30px rgba(40,60,70,.14);font-size:.84rem}
 .card-h{display:flex;justify-content:space-between;align-items:flex-start}
 .card h3{margin:2px 0 8px;font-size:1.35rem;font-weight:900}
@@ -256,7 +260,7 @@ body.has-tasktable .taskform,body.has-tasktable .card{max-height:calc(58vh - 96p
   .card{top:8px;right:8px;left:8px;width:auto;max-height:40vh}
   .timeline{left:8px;right:8px;bottom:calc(46vh + 8px)}
   #panel{left:0;right:0;top:auto;bottom:0;width:auto;max-width:none;max-height:46vh;border-radius:16px 16px 0 0}
-  #keys,#stats{display:none} #credit{bottom:auto;top:8px;right:8px}
+  #keys,#stats{display:none} #surface{bottom:auto;top:52px;right:8px;max-width:calc(100vw - 16px)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -287,18 +291,6 @@ body.has-tasktable .taskform,body.has-tasktable .card{max-height:calc(58vh - 96p
   <div role="tabpanel" id="pane-layers" class="pane">
 
   <section>
-    <h2>地表</h2>
-    <div class="legend" aria-label="地表圖例">
-      <span><i style="background:#ece0cb"></i>市區</span>
-      <span><i style="background:#e6e1d6"></i>道路</span>
-      <span><i style="background:#8cc95e"></i>公園綠地</span>
-      <span><i style="background:#3f7f3d"></i>山林</span>
-      <span><i style="background:#3f97cf"></i>河川水面</span>
-      <span><i style="background:#cfd3d4"></i>機場</span>
-    </div>
-  </section>
-
-  <section>
     <h2>溝鼠族群推估</h2>
     <div class="row"><label for="t-heat"><span class="chip" style="background:var(--heat-3)"></span>顯示熱區</label><span class="switch"><input type="checkbox" id="t-heat" checked><i></i></span></div>
     <div class="seg" role="radiogroup" aria-label="熱區模式">
@@ -318,7 +310,8 @@ body.has-tasktable .taskform,body.has-tasktable .card{max-height:calc(58vh - 96p
   </section>
 
   <section>
-    <h2>地點</h2>
+    <h2 class="h2-act">地點<button class="add" type="button" id="btn-add-place" aria-label="新增地點" title="新增地點">＋</button></h2>
+    <p id="add-place-msg" class="hint" role="status" hidden>新增地點功能開發中。</p>
     <div class="row"><label for="t-market"><span class="chip" style="background:var(--market)"></span>攤販集中場 <span class="count" id="c-market"></span></label><span class="switch"><input type="checkbox" id="t-market" checked><i></i></span></div>
     <div class="row"><label for="t-tmarket"><span class="chip" style="background:var(--tmarket)"></span>傳統市場 <span class="count" id="c-tmarket"></span></label><span class="switch"><input type="checkbox" id="t-tmarket" checked><i></i></span></div>
     <div class="row"><label for="t-recycle"><span class="chip" style="background:var(--recycle)"></span>廚餘收受點 <span class="count" id="c-recycle"></span></label><span class="switch"><input type="checkbox" id="t-recycle" checked><i></i></span></div>
@@ -329,7 +322,6 @@ body.has-tasktable .taskform,body.has-tasktable .card{max-height:calc(58vh - 96p
 
   <div class="actions">
     <button class="btn" id="btn-reset" type="button">重設視角</button>
-    <a class="btn" href="index.html">回到資料地圖</a>
   </div>
   <div class="foot">族群指數由下水道、市場、攤販、餐飲與垃圾車停靠點推估承載量，再依防治任務與回報逐日推算，是相對值，不是實際捕鼠或通報數。回報目前為<b>模擬資料</b>。</div>
   </div>
@@ -376,7 +368,13 @@ body.has-tasktable .taskform,body.has-tasktable .card{max-height:calc(58vh - 96p
 
 <div id="tip" role="tooltip"></div>
 <div id="stats" aria-hidden="true"></div>
-<div id="credit"></div>
+<aside id="surface" aria-label="地表圖例">
+  <div class="legend">
+    <span><i style="background:#ece0cb"></i>市區</span><span><i style="background:#e6e1d6"></i>道路</span><span><i style="background:#8cc95e"></i>公園綠地</span>
+    <span><i style="background:#3f7f3d"></i>山林</span><span><i style="background:#3f97cf"></i>河川水面</span><span><i style="background:#cfd3d4"></i>機場</span>
+  </div>
+  <div id="credit"></div>
+</aside>
 <div id="topbar"><button class="btn tbtn" type="button" id="btn-tasktable" aria-pressed="false">任務列表</button><label class="persona"><span>身分</span><select id="persona" aria-label="目前身分（demo，不限制權限）"></select></label><button class="btn gear" type="button" id="btn-settings" aria-label="設定" title="模型參數設定">⚙</button></div>
 <aside id="settings" class="drawer" aria-label="設定" hidden></aside>
 <section id="tasktable" class="tasktable" aria-label="任務列表" hidden></section>
