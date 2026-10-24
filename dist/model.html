@@ -205,6 +205,10 @@ label.btn{display:inline-flex;align-items:center}
 .report-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:240px;overflow-y:auto;font-size:.8rem}
 .report-list li{display:flex;gap:8px;align-items:flex-start;line-height:1.45}
 .report-list .k{display:block;color:var(--text-3);font-size:.72rem}
+.demo-badge{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:12;display:flex;align-items:center;gap:10px;background:#2b2f33;color:#fff;border-radius:999px;padding:5px 6px 5px 14px;font-size:.76rem;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.demo-badge b{color:#ffd28a}
+.demo-badge button{font:inherit;font-size:.72rem;background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:999px;padding:3px 10px;cursor:pointer}
+.demo-badge button:hover{background:rgba(255,255,255,.25)} .demo-badge button:focus-visible{outline:2px solid #ffd28a}
 .gear{height:34px;width:38px;padding:0;font-size:1.05rem;background:var(--panel)}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100vw);z-index:30;background:#fffdf8;border-left:1px solid var(--line);box-shadow:-12px 0 40px rgba(40,60,70,.18);display:flex;flex-direction:column;padding:18px 20px 12px;font-size:.84rem}
 .drawer h3{margin:2px 0 6px;font-size:1.35rem;font-weight:900}
@@ -386,6 +390,7 @@ body.has-tasktable .taskform,body.has-tasktable .card{max-height:calc(58vh - 96p
   </div>
   <div id="credit"></div>
 </aside>
+<div id="demo-badge" class="demo-badge" hidden><span>Demo 情境｜<b id="demo-title"></b>｜資料為模擬</span><button type="button" id="btn-demo-reset">重置情境</button></div>
 <div id="topbar"><button class="btn tbtn" type="button" id="btn-tasktable" aria-pressed="false">任務列表</button><label class="persona"><span>身分</span><select id="persona" aria-label="目前身分（demo，不限制權限）"></select></label><button class="btn gear" type="button" id="btn-settings" aria-label="設定" title="模型參數設定">⚙</button></div>
 <aside id="settings" class="drawer" aria-label="設定" hidden></aside>
 <section id="tasktable" class="tasktable" aria-label="任務列表" hidden></section>

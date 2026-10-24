@@ -8,7 +8,7 @@
 - **核心訊息**：從「事後救火」到「預先部署」——熱區 → 開任務 → 預估效果（含外溢）→ 通知民眾。
 
 ## 2. 進入方式與重置
-- 網址 `model.html?demo=ningxia` 進入情境模式；影片用 `model.html?demo=ningxia&script=video`。
+- 網址 `model.html#demo=ningxia` 進入情境模式；影片用 `model.html#demo=ningxia&script=video`。用 `#` 而不是 `?`：本機預覽伺服器（serve）會把 `model.html` 轉址成 `/model` 並丟掉 `?` 參數，`#` 片段在轉址後會保留。`?demo=` 仍可用於不轉址的主機。
 - 情境的「今天」固定為 **D = 2026-11-02（一）**，與實際日期無關。
 - 情境資料只放在記憶體，**不讀寫平常的 localStorage**；每次重新載入網址就回到初始狀態。畫面另有「重置情境」按鈕。
 - 畫面頂端中央常駐小徽章「Demo 情境｜資料為模擬」；手機推播上標「概念示意」。

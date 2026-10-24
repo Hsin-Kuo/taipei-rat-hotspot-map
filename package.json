@@ -23,7 +23,8 @@
     "test": "node --test",
     "build:sim-reports": "node scripts/build-sim-reports.mjs",
     "fetch:spray": "python3 -I scripts/fetch-spray.py raw/spray",
-    "parse:spray": "python3 -I scripts/parse-spray.py raw/spray dist/data/villages.geojson dist/data/spray_schedule.json"
+    "parse:spray": "python3 -I scripts/parse-spray.py raw/spray dist/data/villages.geojson dist/data/spray_schedule.json",
+    "build:demo": "node scripts/build-demo.mjs"
   },
   "license": "MIT",
   "dependencies": {

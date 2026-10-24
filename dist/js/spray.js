@@ -1,6 +1,7 @@
 // 定期噴藥（環保局戶外環境噴藥日程表）：預載 dist/data/spray_schedule.json，可匯入同格式 JSON 取代
 // 每筆 = 某里某日的一次噴藥，轉成唯讀的定期任務（type 'spray'，recurring: true）進模型
 import { $, esc } from './util.js';
+import { DEMO_ID } from './store.js';
 
 const KEY = 'taipei-rat-tool/spray-v1';     // 匯入的日程（獨立於任務資料，約 0.5 MB）
 
@@ -20,7 +21,7 @@ export function validateSchedule(obj, villageCodes) {
 export function createSpray(app, preloaded) {
   const { G, villages, E } = app;
   let sched = preloaded, origin = 'preload';
-  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s?.entries?.length) { sched = s; origin = 'import'; } } catch { /* 無法讀取就用預載 */ }
+  if (!DEMO_ID) try { const s = JSON.parse(localStorage.getItem(KEY)); if (s?.entries?.length) { sched = s; origin = 'import'; } } catch { /* 無法讀取就用預載 */ }   // 情境模式一律用預載
 
   let byCode, tasks;
   function index() {
@@ -76,7 +77,7 @@ export function createSpray(app, preloaded) {
       sched = { source: v.source, url: v.url, entries: v.ok.sort((p, q) => p.date.localeCompare(q.date)) };
       sched.range = [sched.entries[0].date, sched.entries.at(-1).date];
       origin = 'import';
-      try { localStorage.setItem(KEY, JSON.stringify(sched)); } catch { msg.textContent = '（瀏覽器無法儲存，重新整理後會回到預載）'; }
+      if (!DEMO_ID) try { localStorage.setItem(KEY, JSON.stringify(sched)); } catch { msg.textContent = '（瀏覽器無法儲存，重新整理後會回到預載）'; }
       index(); renderInfo(); app.recomputeSim();
       msg.textContent = `匯入 ${v.ok.length} 筆${v.bad.length ? `；略過 ${v.bad.length} 筆（${v.bad.slice(0, 3).map(([i, w]) => `第 ${i} 筆：${w}`).join('；')}）` : ''}` + msg.textContent;
     } catch (err) { msg.textContent = '匯入失敗：' + err.message; }

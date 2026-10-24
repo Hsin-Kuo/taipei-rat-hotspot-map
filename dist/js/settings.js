@@ -53,7 +53,7 @@ export function createSettings(app) {
       <div class="sgroup"><h4>時間軸</h4>
         <div class="row"><label for="s-timeline">顯示時間軸（過去 90 天～未來 30 天）</label><span class="switch"><input type="checkbox" id="s-timeline" ${P.display.timeline ? 'checked' : ''}><i></i></span></div>
         <p class="hint">關閉後只顯示今天的狀態。今天 = ${esc(app.today)}（可用網址參數 ?today=YYYY-MM-DD 固定 demo 日期）。</p></div>
-      <div class="sgroup"><h4>儲存</h4><p class="hint">任務、匯入的回報與設定存在這台電腦的瀏覽器（localStorage）。換瀏覽器或清除網站資料就會消失，請定期匯出備份。${store.saveOk ? '' : '<b>目前瀏覽器無法寫入儲存空間，重新整理後資料不會保留。</b>'}</p>
+      <div class="sgroup"><h4>儲存</h4><p class="hint">任務、匯入的回報與設定存在這台電腦的瀏覽器（localStorage）。換瀏覽器或清除網站資料就會消失，請定期匯出備份。${store.demo ? '<b>目前是 Demo 情境模式：資料只在記憶體，重新載入即還原，也不會動到平常的資料。</b>' : store.saveOk ? '' : '<b>目前瀏覽器無法寫入儲存空間，重新整理後資料不會保留。</b>'}</p>
         <div class="actions"><button class="btn" type="button" data-act="export-all">匯出全部資料</button><label class="btn">匯入全部資料<input type="file" data-act="import-all" accept=".json" hidden></label></div></div>`;
   }
 

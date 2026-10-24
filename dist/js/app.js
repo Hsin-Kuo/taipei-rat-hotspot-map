@@ -3,7 +3,7 @@ import { createScene } from './scene.js';
 import * as E from './engine.js';
 import { renderHeat } from './heat.js';
 import { createTimeline } from './timeline.js';
-import { store } from './store.js';
+import { store, DEMO_ID } from './store.js';
 import { createVillages, CLASS_LABELS, classOf, classRanges } from './villages.js';
 import { renderCard } from './card.js';
 import { createTasks } from './tasks.js';
@@ -18,7 +18,10 @@ import { $, taipeiToday } from './util.js';
 
 const classOfIndex = (v) => classOf(v, 'index');
 const P = new URLSearchParams(location.search);
-const TODAY = /^\d{4}-\d{2}-\d{2}$/.test(P.get('today') || '') ? P.get('today') : taipeiToday();   // ?today=YYYY-MM-DD 可固定 demo 日期
+// Demo 情境（?demo=ningxia）：載入情境資料並固定「今天」；否則 ?today=YYYY-MM-DD 可固定日期，預設為臺北時間今天
+const DEMO = DEMO_ID ? await fetch(`data/demo_${DEMO_ID}.json`).then(r => { if (!r.ok) throw new Error('找不到情境 ' + DEMO_ID); return r.json(); }).catch(e => { $('loading').textContent = '載入失敗：' + e.message; throw e; }) : null;
+if (DEMO) store.seed(DEMO);
+const TODAY = DEMO ? DEMO.today : /^\d{4}-\d{2}-\d{2}$/.test(P.get('today') || '') ? P.get('today') : taipeiToday();
 const RANGE = [-90, 30];
 
 try { await main(); } catch (e) { $('loading').textContent = '載入失敗：' + e.message; console.error(e); }
@@ -28,7 +31,7 @@ async function main() {
     createScene(),
     fetch('data/grid.json').then(r => r.json()),
     fetch('data/grid.bin').then(r => r.arrayBuffer()),
-    fetch('data/reports_sim.json').then(r => r.json()),
+    DEMO ? { reports: DEMO.reports } : fetch('data/reports_sim.json').then(r => r.json()),
     fetch('data/villages.geojson').then(r => r.json()),
     fetch('data/raptor.json').then(r => r.json()),
     fetch('data/spray_schedule.json').then(r => r.json()),
@@ -41,7 +44,7 @@ async function main() {
     get allTasks() { return [...store.tasks, ...(app.spray?.tasks || [])]; },   // ＋定期噴藥（進模型用）
     get reports() { return [...simReports.reports, ...store.reports]; },
     get persona() { return PERSONAS.find(p => p.id === store.persona) || PERSONAS[0]; },
-    raptorPts: raptor.points, boundaryVersion: gridMeta.boundaryVersion, E,
+    raptorPts: raptor.points, boundaryVersion: gridMeta.boundaryVersion, E, demo: DEMO,
   };
   const geoCache = new Map();
   const villages = app.villages = createVillages(scene, G, villageFc);
@@ -153,6 +156,13 @@ async function main() {
   sel.innerHTML = PERSONAS.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
   sel.value = app.persona.id;
   sel.addEventListener('change', () => store.setPersona(sel.value));
+
+  // Demo 情境：頂端徽章＋重置（情境資料只在記憶體，重新載入即還原）
+  if (DEMO) {
+    $('demo-badge').hidden = false;
+    $('demo-title').textContent = DEMO.title;
+    $('btn-demo-reset').addEventListener('click', () => location.reload());
+  }
 
   recomputeEnv();
   $('loading').classList.add('done');
