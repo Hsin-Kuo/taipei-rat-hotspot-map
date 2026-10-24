@@ -210,7 +210,39 @@ label.btn{display:inline-flex;align-items:center}
 .srcs{font-size:.72rem;color:var(--text-2);margin-top:8px;max-height:30vh;overflow-y:auto}
 .srcs ol{padding-left:20px;line-height:1.5}
 .srcs li:target{background:#fff4e5}
+.tbtn{height:34px;background:var(--panel)}
+.tbtn[aria-pressed=true]{border-color:var(--accent);color:var(--accent);font-weight:700}
+.vlegend{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;font-size:.74rem;color:var(--text-2)}
+.vlegend .lg-title{grid-column:1/-1;font-size:.7rem;color:var(--text-3)}
+.vlegend span{display:flex;align-items:center;gap:6px}
+.vlegend i{width:14px;height:10px;border-radius:3px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.vlegend em{font-style:normal;color:var(--text-3);margin-left:auto;font-variant-numeric:tabular-nums}
+.tasktable{position:fixed;left:16px;right:16px;bottom:16px;height:42vh;z-index:13;background:#fffdf8;border:1px solid var(--line);border-radius:14px;box-shadow:0 -10px 40px rgba(40,60,70,.18);display:flex;flex-direction:column;padding:12px 16px 10px;font-size:.82rem}
+.tt-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.tt-h h3{margin:0;font-size:1.1rem;font-weight:900}
+.tt-h .tt-q{width:240px;flex:0 1 240px}
+.tt-h select{width:auto}
+.tt-h .x{margin-left:auto;font:inherit;font-size:1.3rem;background:none;border:0;color:var(--text-3);cursor:pointer}
+.tt-wrap{flex:1;overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+.tt{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.tt th{position:sticky;top:0;background:#f6f1e7;text-align:left;white-space:nowrap;z-index:1}
+.tt th button{font:inherit;font-size:.74rem;font-weight:700;color:var(--text-2);background:none;border:0;padding:7px 10px;cursor:pointer;width:100%;text-align:left}
+.tt th[aria-sort=ascending] button::after{content:" ▲";font-size:.6rem}
+.tt th[aria-sort=descending] button::after{content:" ▼";font-size:.6rem}
+.tt td{padding:6px 10px;border-top:1px solid var(--line);white-space:nowrap}
+.tt td .tdot{display:inline-block;width:9px;height:9px;margin:0 6px 0 0;vertical-align:0}
+.tt tbody tr[data-id]{cursor:pointer}
+.tt tbody tr[data-id]:hover,.tt tbody tr.on{background:#f3f8f4}
+.tt tbody tr:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.tt tr.cancelled td{color:var(--text-3)} .tt tr.cancelled b{text-decoration:line-through}
+.stag{font-size:.72rem;padding:1px 7px;border-radius:9px;background:#eee8dc}
+.s-active{background:#f3e3c8;color:#8a5a12} .s-done{background:#dcefe2;color:#1f6b3d} .s-cancelled{background:#eee;color:#888}
+.okc{color:var(--accent);font-weight:700}
+.tt td .k{color:var(--text-3);font-size:.74rem}
+body.has-tasktable .taskform,body.has-tasktable .card{max-height:calc(58vh - 96px)}
 @media (max-width:720px){
+  .tasktable{left:0;right:0;bottom:0;height:60vh;border-radius:14px 14px 0 0}
+  .tt-h .tt-q{flex:1 1 100%}
   #topbar{top:8px;right:8px}
   .card{top:8px;right:8px;left:8px;width:auto;max-height:40vh}
   .timeline{left:8px;right:8px;bottom:calc(46vh + 8px)}
@@ -269,6 +301,7 @@ label.btn{display:inline-flex;align-items:center}
       <div class="ramp-labels"><span>被壓低</span><span>與環境基準相比</span><span>升高</span></div></div>
     <div class="slider"><span>不透明度</span><input type="range" id="heat-alpha" min="0.2" max="1" step="0.05" value="0.65" aria-label="熱區不透明度"><span id="heat-alpha-v">65%</span></div>
     <div class="row"><label for="t-vfill"><span class="chip" style="background:linear-gradient(90deg,#fac878,#a01423)"></span>里分級著色</label><span class="switch"><input type="checkbox" id="t-vfill"><i></i></span></div>
+    <div id="vfill-legend" class="vlegend" hidden></div>
     <div class="row"><label for="t-vlines"><span class="chip" style="background:#fff;box-shadow:inset 0 0 0 1px #9aa3a8"></span>里界線 <span class="count">456</span></label><span class="switch"><input type="checkbox" id="t-vlines" checked><i></i></span></div>
     <div class="row"><label for="t-sewer"><span class="chip" style="background:#2f86c4"></span>污水管線</label><span class="switch"><input type="checkbox" id="t-sewer"><i></i></span></div>
   </section>
@@ -293,7 +326,7 @@ label.btn{display:inline-flex;align-items:center}
     <div class="actions"><button class="btn primary" type="button" id="btn-new-task">＋ 新增任務</button>
       <select id="task-filter" aria-label="篩選任務"><option value="open">未結案</option><option value="all">全部</option><option value="planned">規劃中</option><option value="active">執行中</option><option value="done">已完成</option><option value="cancelled">已取消</option></select></div>
     <ul id="task-list" class="task-list"></ul>
-    <div class="actions"><button class="btn" type="button" id="btn-audit">匯出稽核紀錄 CSV</button></div>
+    <div class="actions"><button class="btn" type="button" id="btn-tasktable-2">開啟任務列表</button><button class="btn" type="button" id="btn-audit">匯出稽核紀錄 CSV</button></div>
     <div class="foot">任務可編輯、可取消，不能刪除；每次修改都記錄身分與欄位。已取消的任務不進模型。<br>Demo 的身分只做記錄、不限制權限，紀錄存在本機瀏覽器、可被清除。正式版應接臺北通或公務帳號，依角色授權，稽核紀錄寫入伺服器且不可修改。</div>
   </div>
   <div role="tabpanel" id="pane-reports" class="pane" hidden>
@@ -326,8 +359,9 @@ label.btn{display:inline-flex;align-items:center}
 <div id="tip" role="tooltip"></div>
 <div id="stats" aria-hidden="true"></div>
 <div id="credit"></div>
-<div id="topbar"><label class="persona"><span>身分</span><select id="persona" aria-label="目前身分（demo，不限制權限）"></select></label><button class="btn gear" type="button" id="btn-settings" aria-label="設定" title="模型參數設定">⚙</button></div>
+<div id="topbar"><button class="btn tbtn" type="button" id="btn-tasktable" aria-pressed="false">任務列表</button><label class="persona"><span>身分</span><select id="persona" aria-label="目前身分（demo，不限制權限）"></select></label><button class="btn gear" type="button" id="btn-settings" aria-label="設定" title="模型參數設定">⚙</button></div>
 <aside id="settings" class="drawer" aria-label="設定" hidden></aside>
+<section id="tasktable" class="tasktable" aria-label="任務列表" hidden></section>
 <aside id="card" class="card" aria-label="里資訊" hidden></aside>
 <aside id="taskform" class="card taskform" aria-label="任務表單" hidden></aside>
 <dialog id="notify" class="ndlg" aria-label="通知清單"></dialog>

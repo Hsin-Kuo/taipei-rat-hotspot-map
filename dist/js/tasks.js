@@ -30,10 +30,10 @@ export function createTasks(app) {
       start: app.today, end: E.isoOf(6, app.today),
       executor: { kind: 'team', team: villages.props(codes[0])?.district || '', squad: '', vendor: '', contract: '', other: '' },
       bait: { kind: 'sgar', points: null },
-      followups: { carcass: { date: E.isoOf(7, app.today), done: false }, residue: { date: E.isoOf(14, app.today), done: false } },
+      followups: { carcass: { date: E.isoOf(7, app.today), done: false }, residue: { date: E.isoOf(13, app.today), done: false } },
       budget: { planned: null, actual: null },
       notify: { enabled: true, method: 'board', date: E.isoOf(-3, app.today) },
-      note: '', history: [],
+      note: '', history: [], autoDates: true,
     };
   }
 
@@ -50,6 +50,7 @@ export function createTasks(app) {
         <span class="k">${esc(t.start)}～${esc(t.end).slice(5)} · ${t.scope.villages.length} 里 · ${STATUS[t.status]}</span></span>
       </button></li>`).join('') : '<li class="muted">尚無任務。按「新增任務」，或拉近模型點選里後從資訊卡建立。</li>';
     list.querySelectorAll('.task-row').forEach(b => b.addEventListener('click', () => openTask(b.dataset.id)));
+    app.taskTable?.render();
   }
   $('task-filter').addEventListener('change', renderList);
   $('btn-new-task').addEventListener('click', () => newTask([]));
@@ -119,6 +120,13 @@ export function createTasks(app) {
       const v = el.type === 'checkbox' ? el.checked : el.type === 'number' ? (el.value === '' ? null : Math.max(0, +el.value)) : el.value;
       set(draft, p, v);
       if (p === 'caseNo') form.querySelector('h3').textContent = v;
+      // 新任務：通知日與配套日跟著起訖日移動，直到使用者自己改過
+      if (/^(notify\.date|followups\..*\.date)$/.test(p)) draft.autoDates = false;
+      if (draft.autoDates && (p === 'start' || p === 'end') && draft.start) {
+        const end = draft.end || draft.start, shift = (iso, d) => E.isoOf(E.dayOf(iso, app.today) + d, app.today);
+        draft.notify.date = shift(draft.start, -3); draft.followups.carcass.date = shift(end, 1); draft.followups.residue.date = shift(end, 7);
+        for (const q of ['notify.date', 'followups.carcass.date', 'followups.residue.date']) { const el2 = form.querySelector(`[data-f="${q}"]`); if (el2) el2.value = get(draft, q); }
+      }
       refresh();
     }));
     form.querySelector('[data-act=close]').addEventListener('click', close);
@@ -221,7 +229,7 @@ export function createTasks(app) {
     $('tf-err').textContent = errs.join('；');
     if (errs.length) return;
     draft.caseNo = draft.caseNo.trim();
-    const t = clone(draft);
+    const t = clone(draft); delete t.autoDates;
     if (isNew) stamp(t, 'create', []);
     else {
       const prev = store.tasks.find(x => x.id === t.id), a = flat(prev), b = flat(t);

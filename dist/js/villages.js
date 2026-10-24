@@ -2,12 +2,17 @@
 // 里界線與分級著色都畫在與衛星貼圖同尺寸的 canvas 上，再由 scene.setOverlay 疊到地表
 import { esc } from './util.js';
 
-export const CLASS_BREAKS = { index: [30, 50, 70, 85], change: [-15, -5, 5, 15] };
-export const CLASS_LABELS = { index: ['低', '中低', '中', '中高', '高'], change: ['明顯壓低', '壓低', '持平', '升高', '明顯升高'] };
+export const CLASS_BREAKS = { index: [30, 50, 70, 85], change: [-30, -15, -7, -2, 2, 7, 15, 30] };   // 變化：接近 0 切得較細
+export const CLASS_LABELS = { index: ['低', '中低', '中', '中高', '高'], change: ['大幅壓低', '明顯壓低', '壓低', '略降', '持平', '略升', '升高', '明顯升高', '大幅升高'] };
 export const CLASS_COLORS = {
   index: ['rgba(255,236,200,.55)', 'rgba(250,200,120,.65)', 'rgba(240,140,60,.72)', 'rgba(215,70,40,.78)', 'rgba(160,20,35,.85)'],
-  change: ['rgba(30,90,200,.8)', 'rgba(110,160,220,.65)', 'rgba(240,236,228,.35)', 'rgba(240,150,90,.7)', 'rgba(200,45,35,.82)'],
+  change: ['rgba(22,72,156,.88)', 'rgba(52,108,190,.8)', 'rgba(110,158,218,.72)', 'rgba(178,206,238,.62)', 'rgba(240,236,228,.3)', 'rgba(246,200,168,.62)', 'rgba(238,150,104,.72)', 'rgba(214,82,56,.8)', 'rgba(160,26,38,.88)'],
 };
+// 分級圖例的區間文字
+export function classRanges(mode) {
+  const b = CLASS_BREAKS[mode], sg = (v) => mode === 'change' && v > 0 ? '+' + v : String(v);
+  return CLASS_LABELS[mode].map((lab, k) => [lab, k === 0 ? `< ${sg(b[0])}` : k === b.length ? `≥ ${sg(b[k - 1])}` : `${sg(b[k - 1])} ~ ${sg(b[k])}`, CLASS_COLORS[mode][k]]);
+}
 export const classOf = (v, mode) => { const b = CLASS_BREAKS[mode]; let k = 0; while (k < b.length && v >= b[k]) k++; return k; };
 
 export function createVillages(scene, G, fc) {

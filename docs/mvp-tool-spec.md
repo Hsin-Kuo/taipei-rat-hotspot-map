@@ -92,7 +92,8 @@
 |---|---|---|
 | 100 m 因子網格、里界 | 完成 | `scripts/build-grid.mjs` |
 | 族群模型、時間軸、熱區兩種模式 | 完成（13 項測試） | `dist/js/engine.js`、`timeline.js`、`heat.js` |
-| 里界線、里分級著色、里資訊卡 | 完成 | `villages.js`、`card.js` |
+| 里界線、里分級著色（指數 5 級、變化 9 級，附圖例）、里資訊卡 | 完成 | `villages.js`、`card.js` |
+| 任務列表（全寬抽屜：搜尋、篩選、排序、CSV 匯出） | 完成 | `tasktable.js` |
 | 任務表單、猛禽提示、模型預估、通知清單、稽核 | 完成 | `tasks.js`、`notify.js` |
 | 回報篩選、3D 點位、JSON 匯入 | 完成 | `reports.js` |
 | 設定抽屜（即時預覽、來源標示） | 完成 | `settings.js`、`params.js` |

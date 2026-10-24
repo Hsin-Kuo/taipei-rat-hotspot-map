@@ -4,12 +4,13 @@ import * as E from './engine.js';
 import { renderHeat } from './heat.js';
 import { createTimeline } from './timeline.js';
 import { store } from './store.js';
-import { createVillages, CLASS_LABELS, classOf } from './villages.js';
+import { createVillages, CLASS_LABELS, classOf, classRanges } from './villages.js';
 import { renderCard } from './card.js';
 import { createTasks } from './tasks.js';
 import { openNotify } from './notify.js';
 import { createReports } from './reports.js';
 import { createSettings } from './settings.js';
+import { createTaskTable } from './tasktable.js';
 import { PERSONAS } from './params.js';
 import { $, taipeiToday } from './util.js';
 
@@ -69,13 +70,24 @@ async function main() {
     if (villages.state.fill) {
       scene.setHeat(null);
       villages.paintFill(app.heatMode === 'change' ? app.byVillage.map((v, k) => v - app.baseByVillage[k]) : app.byVillage, app.heatMode);
+      renderFillLegend();
     } else {
+      $('vfill-legend').hidden = true;
       villages.clearFill();
       renderHeat(G, app.values, app.env.K, app.heatMode, heatCanvas);
       scene.setHeat(heatCanvas, gridMeta.bounds);
     }
     if (villages.selected) renderCard(app, villages.selected);
     reportsUI?.paint();
+  }
+
+  // 里分級著色圖例（依目前熱區模式）
+  let legendMode = null;
+  function renderFillLegend() {
+    const el = $('vfill-legend'); el.hidden = false;
+    if (legendMode === app.heatMode) return; legendMode = app.heatMode;
+    el.innerHTML = `<div class="lg-title">${app.heatMode === 'change' ? '全里平均與環境基準差' : '全里平均族群指數'}</div>` +
+      classRanges(app.heatMode).map(([lab, range, col]) => `<span><i style="background:${col}"></i>${lab}<em>${range}</em></span>`).join('');
   }
 
   // ---------- 里：近距離時 hover 顯示里、點擊開資訊卡；遠距離維持行政區（點擊飛至該區） ----------
@@ -125,6 +137,7 @@ async function main() {
   const tasks = app.taskUI = createTasks(app);
   const reportsUI = app.reportsUI = createReports(app);
   app.settingsUI = createSettings(app);
+  app.taskTable = createTaskTable(app);
   app.newTask = (codes) => tasks.newTask(codes);
   app.openTask = (id) => tasks.openTask(id);
   const sel = $('persona');
