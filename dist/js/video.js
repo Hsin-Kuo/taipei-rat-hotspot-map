@@ -42,21 +42,21 @@ export function createVideo(app, scenario) {
     await orbit(20, 2200); await orbit(-20, 1800);
     // 先收起傳統市場、廚餘收受點，再依序打開，讓觀眾看到圖層出現
     stage.setCheck('t-tmarket', false); stage.setCheck('t-recycle', false);
-    say('圖層：傳統市場（橘色）、廚餘收受點（粉紅色）');
+    say('圖層可根據相關地點計算，顯示老鼠熱區');
     stage.pose([-2.4, 0, 5.6], [-2.9, 2.6, 8.4], 2000); await wait(1500);
     hl($('t-tmarket').closest('.row')); stage.setCheck('t-tmarket', true); await wait(3000);
     hl($('t-recycle').closest('.row')); stage.setCheck('t-recycle', true); await wait(3000);
-    say('污水管線、近期定期噴藥的里（環保局日程）');
-    hl($('t-sewer').closest('.row')); stage.setCheck('t-sewer', true); await wait(3000);
+    say('熱度可以「里」為單位檢視、並顯示近期定期噴藥的里（環保局日程）');
+    hl($('t-vfill').closest('.row')); stage.setCheck('t-vfill', true); await wait(3000);
     hl($('t-spray').closest('.row')); stage.setCheck('t-spray', true); await wait(3500);
-    stage.setCheck('t-sewer', false); stage.setCheck('t-spray', false);
+    stage.setCheck('t-vfill', false); stage.setCheck('t-spray', false);
 
     // ---------- ② 寧夏故事（約 60 秒；同台上腳本） ----------
     // 影片字幕寫給觀眾看（台上模式的步驟提示維持簡短版，兩者分開）
     const STORY = [
-      ['全市族群指數：最近兩週回報暴增', 6000],
-      ['暴增位置為寧夏夜市，老鼠熱度改為以「里」為單位檢視', 7500],
-      ['星明里：等級高、近 30 天回報量大增', 9500],
+      ['全市族群指數：發現近兩週回報暴增', 6000],
+      ['暴增位置為寧夏夜市（舉例）', 7500],
+      ['點擊星明里，可看到等級為高、近 30 天回報量大增', 9500],
       ['建立寧夏投藥任務：確認範圍、模型預估狀況', 12000],
       ['通知清單：範圍 3 里＋外溢環帶', 9000],
     ];
@@ -79,10 +79,10 @@ export function createVideo(app, scenario) {
     say('選擇投藥（第二代抗凝血劑）→ 系統自動檢查猛禽二次中毒風險');
     hl(document.querySelector('#taskform [data-f="bait.kind"]')); await wait(2500);
     hl($('tf-raptor'), 6000); await wait(7500);
-    say('附近有鳳頭蒼鷹紀錄 → 改用捕鼠籠，避免二次中毒');
+    say('因附近有鳳頭蒼鷹紀錄 → 改用捕鼠籠，避免二次中毒');
     const trap = document.querySelector('#taskform input[name=ttype][value=trap]');
     hl(trap.closest('label')); trap.click(); await wait(4500);
-    say('模型預估：比較範圍內與外溢環帶的族群變化');
+    say('同樣有模型預估：比較範圍內與外溢環帶的族群變化');
     await wait(400); hl($('tf-preview'), 7000); await wait(8500);
     app.taskUI.close();
 
@@ -100,7 +100,7 @@ export function createVideo(app, scenario) {
     app.settingsUI.close();
 
     // ---------- ⑤ 收尾（約 10 秒） ----------
-    say('鼠類是第一個主題，其他環衛主題陸續整合');
+    say('鼠類是第一個主題，期待未來有其他環衛主題陸續整合，使平台不只服務單一議題');
     stage.run(6); await wait(11000);
     say('');
   }
