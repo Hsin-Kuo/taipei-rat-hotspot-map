@@ -1,3 +1,9 @@
 node_modules/
 raw/
 .DS_Store
+recordings/
+
+# 建置中間檔（網頁只用對應的 jpg）
+dist/data/model_texture.png
+dist/data/satellite.png
+dist/data/title.png
