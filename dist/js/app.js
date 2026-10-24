@@ -13,6 +13,7 @@ import { createSettings } from './settings.js';
 import { createTaskTable } from './tasktable.js';
 import { createSpray } from './spray.js';
 import { themeSelect } from './themes.js';
+import { createPhone } from './phone.js';
 import { PERSONAS } from './params.js';
 import { $, taipeiToday } from './util.js';
 
@@ -120,7 +121,10 @@ async function main() {
   $('t-vlines').addEventListener('change', e => villages.setLines(e.target.checked));
   $('t-vfill').addEventListener('change', e => { villages.state.fill = e.target.checked; redraw(); });
 
-  const timeline = createTimeline($('timeline'), { d0: RANGE[0], d1: RANGE[1], today: TODAY, onChange: (d) => { app.day = d; redraw(); } });
+  const timeline = createTimeline($('timeline'), { d0: RANGE[0], d1: RANGE[1], today: TODAY, onChange: (d) => {
+    app.day = d; redraw();
+    if (app.phone?.update(d).length && timeline.playing) timeline.hold(2200);   // 推播跳出：播放暫停一下
+  } });
   const applyTimelineVisible = () => {
     const on = app.params.display.timeline;
     $('timeline').hidden = !on;
@@ -162,9 +166,11 @@ async function main() {
     $('demo-badge').hidden = false;
     $('demo-title').textContent = DEMO.title;
     $('btn-demo-reset').addEventListener('click', () => location.reload());
+    if (DEMO.push?.length) app.phone = createPhone(app, DEMO.push);
   }
 
   recomputeEnv();
+  app.phone?.update(app.day);
   $('loading').classList.add('done');
   Object.assign(app, { recomputeEnv, recomputeSim, redraw, timeline, applyTimelineVisible, E });
   window.__app = app;

@@ -20,7 +20,7 @@ export function createTimeline(el, { d0, d1, today, onChange }) {
   const range = q('.tl-range'), svg = q('.tl-marks'), play = q('.tl-play');
   const span = d1 - d0;
   q('.tl-now').style.left = `${(-d0) / span * 100}%`;
-  let day = 0, timer = null;
+  let day = 0, timer = null, holdUntil = 0;
   function set(d, fire = true) {
     day = Math.max(d0, Math.min(d1, d)); range.value = day;
     q('.tl-date').textContent = isoOf(day, today);
@@ -36,7 +36,7 @@ export function createTimeline(el, { d0, d1, today, onChange }) {
     if (timer) return stop();
     if (day >= d1) set(d0);
     play.textContent = '❚❚'; play.setAttribute('aria-label', '暫停');
-    timer = setInterval(() => { if (day >= d1) stop(); else set(day + 1); }, 120);
+    timer = setInterval(() => { if (performance.now() < holdUntil) return; if (day >= d1) stop(); else set(day + 1); }, 120);
   });
   // 標記：任務 = 依類型著色的橫條；回報 = 每日數量直方圖
   function setMarks(tasks, reports) {
@@ -55,5 +55,6 @@ export function createTimeline(el, { d0, d1, today, onChange }) {
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.innerHTML = s;
   }
   set(0, false);
-  return { set, setMarks, get day() { return day; }, stop };
+  // hold：播放中暫停 ms 毫秒（例如推播跳出時讓觀眾看清楚）
+  return { set, setMarks, get day() { return day; }, stop, hold(ms) { holdUntil = performance.now() + ms; }, get playing() { return !!timer; }, play() { if (!timer) play.click(); } };
 }

@@ -205,6 +205,28 @@ label.btn{display:inline-flex;align-items:center}
 .report-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:240px;overflow-y:auto;font-size:.8rem}
 .report-list li{display:flex;gap:8px;align-items:flex-start;line-height:1.45}
 .report-list .k{display:block;color:var(--text-3);font-size:.72rem}
+.phone{position:fixed;right:24px;bottom:150px;z-index:14;width:260px;animation:ph-in .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes ph-in{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.ph-frame{position:relative;height:min(500px,calc(100vh - 230px));border-radius:36px;padding:14px 12px;overflow:hidden;color:#fff;
+  background:linear-gradient(160deg,#3b5d73 0%,#24384a 55%,#1b2733 100%);box-shadow:0 0 0 8px #111,0 0 0 9px #444,0 24px 50px rgba(0,0,0,.35)}
+.ph-notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:84px;height:22px;border-radius:12px;background:#111}
+.ph-status{display:flex;justify-content:space-between;font-size:.7rem;padding:2px 14px 0;opacity:.9}
+.ph-clock{text-align:center;font-size:3rem;font-weight:300;letter-spacing:.02em;margin-top:18px;line-height:1}
+.ph-date{text-align:center;font-size:.78rem;opacity:.85;margin:4px 0 14px}
+.ph-list{display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:calc(100% - 130px)}
+.ph-card{background:rgba(255,255,255,.88);color:#1d2329;border-radius:16px;padding:9px 11px;font-size:.74rem;line-height:1.45;backdrop-filter:blur(10px)}
+.ph-card.new{animation:ph-card .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes ph-card{from{transform:translateY(-14px) scale(.96);opacity:0}to{transform:none;opacity:1}}
+.ph-app{display:flex;align-items:center;gap:6px;font-size:.68rem;color:#56626d;margin-bottom:3px}
+.ph-app i{font-style:normal;width:18px;height:18px;border-radius:5px;background:#2f7d4f;color:#fff;display:grid;place-items:center;font-size:.62rem;font-weight:900}
+.ph-app b{color:#1d2329}
+.ph-concept{font-size:.6rem;padding:0 5px;border-radius:5px;background:#ffe2b8;color:#8a5a12}
+.ph-when{margin-left:auto}
+.ph-title{font-weight:700;font-size:.78rem}
+.ph-to{margin-top:4px;font-size:.64rem;color:#6b7680}
+.ph-x{position:absolute;top:-10px;right:-10px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line-2);background:#fff;color:var(--text-2);cursor:pointer;font-size:1rem;line-height:1}
+.ph-x:focus-visible{outline:2px solid var(--focus)}
+@media (prefers-reduced-motion:reduce){.phone,.ph-card.new{animation:none}}
 .demo-badge{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:12;display:flex;align-items:center;gap:10px;background:#2b2f33;color:#fff;border-radius:999px;padding:5px 6px 5px 14px;font-size:.76rem;box-shadow:0 6px 18px rgba(0,0,0,.18)}
 .demo-badge b{color:#ffd28a}
 .demo-badge button{font:inherit;font-size:.72rem;background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:999px;padding:3px 10px;cursor:pointer}
@@ -394,6 +416,7 @@ body.has-tasktable .taskform,body.has-tasktable .card{max-height:calc(58vh - 96p
 <div id="topbar"><button class="btn tbtn" type="button" id="btn-tasktable" aria-pressed="false">任務列表</button><label class="persona"><span>身分</span><select id="persona" aria-label="目前身分（demo，不限制權限）"></select></label><button class="btn gear" type="button" id="btn-settings" aria-label="設定" title="模型參數設定">⚙</button></div>
 <aside id="settings" class="drawer" aria-label="設定" hidden></aside>
 <section id="tasktable" class="tasktable" aria-label="任務列表" hidden></section>
+<aside id="phone" class="phone" aria-label="臺北通推播（概念示意）" hidden></aside>
 <aside id="card" class="card" aria-label="里資訊" hidden></aside>
 <aside id="taskform" class="card taskform" aria-label="任務表單" hidden></aside>
 <dialog id="notify" class="ndlg" aria-label="通知清單"></dialog>
