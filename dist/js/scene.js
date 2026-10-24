@@ -289,6 +289,10 @@ export async function createScene() {
     const w = tip.offsetWidth, h = tip.offsetHeight;
     tip.style.left = Math.min(e.clientX + 14, innerWidth - w - 8) + 'px'; tip.style.top = (e.clientY + 14 + h > innerHeight ? e.clientY - h - 14 : e.clientY + 14) + 'px';
   });
+  // 滑鼠移到面板、資訊卡等疊在地圖上的元素時，canvas 收不到 pointermove：離開就收起提示與 hover 外框
+  renderer.domElement.addEventListener('pointerleave', () => {
+    tip.style.display = 'none'; setHover(null); hooks.hover?.(null); renderer.domElement.style.cursor = '';
+  });
   let down = null;
   renderer.domElement.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
   renderer.domElement.addEventListener('pointerup', e => {
