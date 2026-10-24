@@ -39,6 +39,15 @@ export function createVillages(scene, G, fc) {
     scene.setOverlay('vfill', { canvas: fillCv, bounds, alpha: 1, z: 1 });
   }
   const clearFill = () => scene.setOverlay('vfill', null);
+  // 近期定期噴藥的里：青綠色虛線外框＋淡色填滿
+  const sprayCv = document.createElement('canvas'); sprayCv.width = cw; sprayCv.height = ch;
+  function paintSpray(codes) {
+    if (!codes) { scene.setOverlay('vspray', null); return; }
+    const g = sprayCv.getContext('2d'); g.clearRect(0, 0, cw, ch);
+    g.fillStyle = 'rgba(31,158,143,.16)'; g.strokeStyle = 'rgba(16,120,108,.95)'; g.lineWidth = 3.5; g.setLineDash([9, 6]); g.lineJoin = 'round';
+    for (const c of codes) { const f = byCode.get(c); if (!f) continue; path(g, f); g.fill('evenodd'); g.stroke(); }
+    scene.setOverlay('vspray', { canvas: sprayCv, bounds, alpha: 1, z: 3 });
+  }
 
   // 外框：hover（白）與選取（綠）
   const hoverMat = scene.lineMat(0xffffff, 2.5), selMat = scene.lineMat(0x1f7a46, 4);
@@ -63,5 +72,5 @@ export function createVillages(scene, G, fc) {
   const tipHtml = (code, line2) => { const p = props(code); return `<b>${esc(p.district)} ${esc(p.name)}</b><span class="k">${line2}</span>`; };
 
   setLines(true);
-  return { feats, byCode, props, codeAt, setLines, paintFill, clearFill, setHover, setSelected, setScope, tipHtml, state, get selected() { return selCode; } };
+  return { feats, byCode, props, codeAt, setLines, paintFill, clearFill, setHover, setSelected, setScope, paintSpray, tipHtml, state, get selected() { return selCode; } };
 }

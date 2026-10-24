@@ -20,8 +20,10 @@ export const FACTOR_LABELS = {
   sewer: '污水人孔', storm: '雨水人孔', market: '攤販集中場', tmarket: '傳統市場', food: '餐飲業者', garbage: '垃圾車停靠點',
 };
 export const TASK_TYPES = {
-  poison: '投藥', clean: '環境清消', trap: '捕鼠籠', fill: '填補鼠洞',
+  poison: '投藥', clean: '環境清消', trap: '捕鼠籠', fill: '填補鼠洞', spray: '定期噴藥',
 };
+// 由環保局日程表預載的定期任務類型（唯讀，不能在表單建立）
+export const RECURRING_TYPES = ['spray'];
 export const SPECIES = { norway: '溝鼠', roof: '屋頂鼠', house: '小家鼠', unknown: '不確定' };
 export const EVIDENCE = { live: '活體', dead: '屍體', droppings: '糞便', gnaw: '咬痕', burrow: '鼠洞' };
 
@@ -40,6 +42,7 @@ export const DEFAULTS = {
     clean:  { kill: 0.1,  killPer: 'task', kDrop: 0.3, kHalf: 60,  spill: 0.3,  ring: 300 },
     trap:   { kill: 0.023, killPer: 'day', kDrop: 0,   kHalf: 0,   spill: 0.05, ring: 300 },
     fill:   { kill: 0,    killPer: 'task', kDrop: 0.2, kHalf: 120, spill: 0.15, ring: 300 },
+    spray:  { kill: 0,    killPer: 'task', kDrop: 0.05, kHalf: 7,  spill: 0,    ring: 300 },   // 戶外環境噴藥：對象是蚊蟲，僅假設順帶清理水溝堆積物
   },
   reports: {
     base: 30, half: 21, radius: 150,

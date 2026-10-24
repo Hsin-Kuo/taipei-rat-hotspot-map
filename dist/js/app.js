@@ -11,6 +11,7 @@ import { openNotify } from './notify.js';
 import { createReports } from './reports.js';
 import { createSettings } from './settings.js';
 import { createTaskTable } from './tasktable.js';
+import { createSpray } from './spray.js';
 import { PERSONAS } from './params.js';
 import { $, taipeiToday } from './util.js';
 
@@ -22,25 +23,28 @@ const RANGE = [-90, 30];
 try { await main(); } catch (e) { $('loading').textContent = '載入失敗：' + e.message; console.error(e); }
 
 async function main() {
-  const [scene, gridMeta, gridBuf, simReports, villageFc, raptor] = await Promise.all([
+  const [scene, gridMeta, gridBuf, simReports, villageFc, raptor, spraySched] = await Promise.all([
     createScene(),
     fetch('data/grid.json').then(r => r.json()),
     fetch('data/grid.bin').then(r => r.arrayBuffer()),
     fetch('data/reports_sim.json').then(r => r.json()),
     fetch('data/villages.geojson').then(r => r.json()),
     fetch('data/raptor.json').then(r => r.json()),
+    fetch('data/spray_schedule.json').then(r => r.json()),
   ]);
   const G = E.makeGrid(gridMeta, gridBuf);
   const app = {
     G, scene, today: TODAY, params: store.params(),
     env: null, sim: null, day: 0, heatMode: 'index',
-    get tasks() { return store.tasks; },
+    get tasks() { return store.tasks; },                                   // 使用者建立的任務
+    get allTasks() { return [...store.tasks, ...(app.spray?.tasks || [])]; },   // ＋定期噴藥（進模型用）
     get reports() { return [...simReports.reports, ...store.reports]; },
     get persona() { return PERSONAS.find(p => p.id === store.persona) || PERSONAS[0]; },
     raptorPts: raptor.points, boundaryVersion: gridMeta.boundaryVersion, E,
   };
   const geoCache = new Map();
   const villages = app.villages = createVillages(scene, G, villageFc);
+  app.spray = createSpray(app, spraySched);
   // 回報 → 所在里（依 id 快取）
   const repVill = new Map();
   app.reportVillage = (r) => { if (!repVill.has(r.id)) { const c = G.cellOf(r.lon, r.lat); repVill.set(r.id, c >= 0 && G.vid[c] ? G.villages[G.vid[c] - 1] : null); } return repVill.get(r.id); };
@@ -48,7 +52,7 @@ async function main() {
   const ringSets = new WeakMap();
   app.inRing = (t, k) => {
     const tp = app.params.tasks[t.type]; if (!tp || !t.scope?.villages?.length) return false;
-    const geo = geoCache.get(t.scope.villages.join(',') + '|' + tp.ring); if (!geo) return false;
+    const geo = geoCache.get(t.scope.villages.join(',') + '|' + (tp.spill > 0 ? tp.ring : 0)); if (!geo) return false;
     if (!ringSets.has(geo)) ringSets.set(geo, new Set(geo.ring));
     const set = ringSets.get(geo); return G.vCells[k].some(m => set.has(m));
   };
@@ -58,7 +62,7 @@ async function main() {
   function recomputeEnv() { app.env = E.computeEnv(G, app.params); app.baseByVillage = E.byVillage(G, app.env.K); geoCache.clear(); recomputeSim(); }
   function recomputeSim() {
     const t0 = performance.now();
-    app.sim = E.simulate(G, app.env, app.params, app.tasks, TODAY, RANGE, geoCache);
+    app.sim = E.simulate(G, app.env, app.params, app.allTasks, TODAY, RANGE, geoCache);
     app.simMs = Math.round(performance.now() - t0);
     timeline.setMarks(app.tasks, app.reports.filter(r => app.params.reports.species.includes(r.species)));
     redraw();
@@ -79,6 +83,7 @@ async function main() {
     }
     if (villages.selected) renderCard(app, villages.selected);
     reportsUI?.paint();
+    app.spray?.paint();
   }
 
   // 里分級著色圖例（依目前熱區模式）

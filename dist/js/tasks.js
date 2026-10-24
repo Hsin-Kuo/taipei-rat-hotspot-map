@@ -1,5 +1,5 @@
 // 防治任務：清單（左側「任務」分頁）＋表單（右側面板）＋稽核紀錄＋猛禽二次中毒提示＋模型預估
-import { TASK_TYPES, BAITS, EXECUTORS, NOTIFY_METHODS, clone } from './params.js';
+import { TASK_TYPES, BAITS, EXECUTORS, NOTIFY_METHODS, RECURRING_TYPES, clone } from './params.js';
 import { STATUS } from './card.js';
 import { TASK_COLORS } from './timeline.js';
 import { store, download } from './store.js';
@@ -64,7 +64,7 @@ export function createTasks(app) {
       <header class="card-h"><div><div class="eyebrow">${isNew ? '新增任務' : '編輯任務'}</div><h3>${esc(t.caseNo)}</h3></div><button class="x" type="button" data-act="close" aria-label="關閉">×</button></header>
       <div class="fgrid">
         <label class="full">案號${inp('caseNo', 'text', 'required maxlength="40"')}</label>
-        <fieldset class="full seg seg4" role="radiogroup" aria-label="類型">${Object.entries(TASK_TYPES).map(([k, v]) => `<label><input type="radio" name="ttype" data-f="type" value="${k}" ${k === t.type ? 'checked' : ''}><span>${v}</span></label>`).join('')}</fieldset>
+        <fieldset class="full seg seg4" role="radiogroup" aria-label="類型">${Object.entries(TASK_TYPES).filter(([k]) => !RECURRING_TYPES.includes(k)).map(([k, v]) => `<label><input type="radio" name="ttype" data-f="type" value="${k}" ${k === t.type ? 'checked' : ''}><span>${v}</span></label>`).join('')}</fieldset>
       </div>
       <h4>範圍 <span class="count" id="tf-scount"></span></h4>
       <div class="scope-pick">
@@ -74,6 +74,7 @@ export function createTasks(app) {
       <div id="tf-chips" class="chips scope-chips"></div>
       <p class="hint">也可以拉近模型後直接點選里來加入或移除。</p>
       <div id="tf-raptor"></div>
+      <div id="tf-spray"></div>
       <h4>執行時間</h4>
       <div class="fgrid"><label>開始${inp('start', 'date')}</label><label>結束${inp('end', 'date')}</label></div>
       <h4>執行單位</h4>
@@ -177,6 +178,10 @@ export function createTasks(app) {
       rb.innerHTML = hits.length ? `<div class="warn"><b>猛禽二次中毒風險</b>範圍外擴 ${buffer / 1000} km 內有 ${hits.length} 筆鳳頭蒼鷹紀錄（${sinceYear} 年以後，最近 ${Math.max(...hits.map(h => h[2]))} 年）。
         建議優先考慮捕鼠籠或環境清消；若需投藥，使用加蓋餌站、縮短投藥期並加強鼠屍清理與殘藥回收。<span class="k">紀錄來自公民科學資料，部分座標精度約 1 km。</span></div>` : `<div class="ok">範圍外擴 ${buffer / 1000} km 內無 ${sinceYear} 年以後的鳳頭蒼鷹紀錄。</div>`;
     } else rb.innerHTML = '';
+    // 定期噴藥提醒：範圍內的里在任務前後 14 天內有排定噴藥
+    const sp = vs.length && draft.start ? app.spray.near(vs, draft.start, draft.end) : [];
+    $('tf-spray').innerHTML = sp.length ? `<div class="info"><b>範圍內有定期噴藥（任務前後 14 天）</b>${sp.slice(0, 8).map(([c, d]) => `${esc(vName(c))} ${d.slice(5)}`).join('、')}${sp.length > 8 ? ` 等 ${sp.length} 筆` : ''}
+      <span class="k">可與清潔隊消毒組協調同日進行，或錯開以免重複動員。</span></div>` : '';
     clearTimeout(previewTimer); previewTimer = setTimeout(preview, 200);
   }
 
@@ -185,7 +190,7 @@ export function createTasks(app) {
     const box = $('tf-preview'); if (!box || !draft) return;
     const vs = draft.scope.villages;
     if (!vs.length || !draft.start) { box.innerHTML = ''; return; }
-    const tasks = store.tasks.filter(t => t.id !== draft.id).concat(draft.status === 'cancelled' ? [] : [draft]);
+    const tasks = app.allTasks.filter(t => t.id !== draft.id).concat(draft.status === 'cancelled' ? [] : [draft]);
     const sim = E.simulate(G, app.env, app.params, tasks, app.today, [-90, 30]);
     const geo = E.taskGeometry(G, app.env, vs, app.params.tasks[draft.type].ring);
     const mean = (ms, day) => { const di = Math.min(sim.nd - 1, Math.max(0, day - sim.d0)); let s = 0; for (const m of ms) s += sim.N[di * G.M + m]; return ms.length ? s / ms.length : 0; };

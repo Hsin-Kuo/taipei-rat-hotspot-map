@@ -3,7 +3,7 @@ import { isoOf, dayOf } from './engine.js';
 import { TASK_TYPES } from './params.js';
 import { esc } from './util.js';
 
-export const TASK_COLORS = { poison: '#c0392b', clean: '#2f86c4', trap: '#8e6bbf', fill: '#7a5638' };
+export const TASK_COLORS = { poison: '#c0392b', clean: '#2f86c4', trap: '#8e6bbf', fill: '#7a5638', spray: '#1f9e8f' };
 
 export function createTimeline(el, { d0, d1, today, onChange }) {
   el.innerHTML = `

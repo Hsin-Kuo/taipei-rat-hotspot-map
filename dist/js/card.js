@@ -37,6 +37,7 @@ export function renderCard(app, code) {
   const bySp = Object.keys(SPECIES).map(s => [s, reps.filter(r => r.species === s).length]).filter(([, n]) => n);
   // 任務：範圍含此里，或此里在外溢環帶
   const tasks = app.tasks.filter(t => t.scope?.villages?.includes(code));
+  const sp = app.spray.around(code, app.day), rel = (iso) => { const d = dayOf(iso, app.today) - app.day; return d === 0 ? '當天' : d < 0 ? `${-d} 天前` : `${d} 天後`; };
   const ringTasks = app.tasks.filter(t => t.status !== 'cancelled' && !t.scope?.villages?.includes(code) && app.inRing?.(t, k));
   const taskRow = (t, note = '') => `<li><button class="link" type="button" data-task="${esc(t.id)}">${esc(t.caseNo || t.id)}</button> ${TASK_TYPES[t.type] || ''} · ${STATUS[t.status] || ''} · ${esc(t.start)}${t.end && t.end !== t.start ? '～' + esc(t.end).slice(5) : ''}${note}</li>`;
   el.innerHTML = `
@@ -51,6 +52,8 @@ export function renderCard(app, code) {
     ${spark(app, series(app, k), vBase)}
     <h4>近 30 天回報 <span class="count">${reps.length} 件</span></h4>
     ${bySp.length ? `<div class="chips">${bySp.map(([s, n]) => `<span class="sp sp-${s}">${SPECIES[s]} ${n}</span>`).join('')}</div>` : '<p class="muted">無</p>'}
+    <h4>定期噴藥 <span class="count">環保局日程</span></h4>
+    <p class="spray-line">上次 ${sp.last ? `<b>${sp.last.slice(5)}</b>（${rel(sp.last)}）` : '—'}　下次 ${sp.next ? `<b>${sp.next.slice(5)}</b>（${rel(sp.next)}）` : '—'}</p>
     <h4>防治任務 <span class="count">${tasks.length} 件</span></h4>
     ${tasks.length ? `<ul class="tasks">${tasks.map(t => taskRow(t)).join('')}</ul>` : '<p class="muted">無</p>'}
     ${ringTasks.length ? `<h4>位於外溢環帶</h4><ul class="tasks">${ringTasks.map(t => taskRow(t)).join('')}</ul>` : ''}

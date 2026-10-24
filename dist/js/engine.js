@@ -89,6 +89,7 @@ export function taskGeometry(G, env, villages, ringMeters) {
   const inScope = new Uint8Array(G.N);
   const scope = [];
   for (const code of villages) { const k = G.vIndex.get(code); if (!k) continue; for (const m of G.vCells[k - 1]) { inScope[G.cells[m]] = 1; scope.push(m); } }
+  if (!(ringMeters > 0)) return { scope: Int32Array.from(scope), ring: new Int32Array(0), ringW: new Float32Array(0) };   // 不外溢的任務不需要環帶
   // chamfer 距離（3-4，單位 = 格 × 3）
   const { nx, ny } = G, D = new Float32Array(G.N).fill(1e9);
   for (let i = 0; i < G.N; i++) if (inScope[i]) D[i] = 0;
@@ -111,12 +112,15 @@ export function simulate(G, env, P, tasks, todayIso, range = [-90, 30], geoCache
   const LN2 = Math.LN2;
   const active = tasks.filter(t => t.status !== 'cancelled' && t.scope?.villages?.length && P.tasks[t.type]).map(t => {
     const tp = P.tasks[t.type], s = dayOf(t.start, todayIso), e = Math.max(s, dayOf(t.end || t.start, todayIso));
-    const key = t.scope.villages.join(',') + '|' + tp.ring;
-    if (!geoCache.has(key)) geoCache.set(key, taskGeometry(G, env, t.scope.villages, tp.ring));
+    const ring = tp.spill > 0 ? tp.ring : 0;
+    const key = t.scope.villages.join(',') + '|' + ring;
+    if (!geoCache.has(key)) geoCache.set(key, taskGeometry(G, env, t.scope.villages, ring));
     const kill = tp.baitKill?.[t.bait?.kind] ?? tp.kill;    // 投藥依藥劑種類
     const daily = tp.killPer === 'day' ? kill : 1 - Math.pow(1 - kill, 1 / (e - s + 1));
-    return { t, tp, s, e, daily, geo: geoCache.get(key) };
-  });
+    // 承載量效果衰減到 0.1% 以下的日子（之後不再計算）
+    const kEnd = tp.kDrop ? e + Math.ceil(Math.max(1, tp.kHalf) * Math.log2(1000)) : e;
+    return { t, tp, s, e, kEnd, daily, geo: geoCache.get(key) };
+  }).filter(a => a.kEnd >= d0 && a.s <= d1 && (a.daily > 0 || a.tp.kDrop > 0));
   const N = new Float32Array(nd * M);
   const n = Float32Array.from(K);                     // 起點：90 天前處於平衡（N = K）
   const kmul = new Float32Array(M), keff = new Float32Array(M);
@@ -125,7 +129,7 @@ export function simulate(G, env, P, tasks, todayIso, range = [-90, 30], geoCache
     // 1) K 倍率：降承載量的任務（執行期間全額，結束後依半衰期恢復）
     kmul.fill(1);
     for (const a of active) {
-      if (!a.tp.kDrop || day < a.s) continue;
+      if (!a.tp.kDrop || day < a.s || day > a.kEnd) continue;
       const f = day <= a.e ? 1 : Math.exp(-LN2 * (day - a.e) / Math.max(1, a.tp.kHalf));
       for (const m of a.geo.scope) kmul[m] *= 1 - a.tp.kDrop * f;
     }

@@ -41,7 +41,8 @@ export function createSettings(app) {
       ${Object.entries(TASK_TYPES).map(([k, name]) => { const t = P.tasks[k]; return `<div class="sgroup"><h4>${name}</h4>
         ${k === 'poison' ? slider('tasks.poison.baitKill.sgar', 'task.baitKill', '撲殺率（第二代抗凝血劑）') + slider('tasks.poison.baitKill.fgar', 'task.baitKill', '撲殺率（第一代抗凝血劑）') + slider('tasks.poison.kill', 'task.kill', '撲殺率（其他藥劑）', ['richards1981']) : ''}
         ${k === 'clean' || k === 'trap' ? slider(`tasks.${k}.kill`, 'task.kill', t.killPer === 'day' ? '每日扣除比例（約每週 15%）' : '扣除比例（整個任務期間）', null) : ''}
-        ${k === 'clean' || k === 'fill' ? slider(`tasks.${k}.kDrop`, 'task.kDrop') + slider(`tasks.${k}.kHalf`, 'task.kHalf') : ''}
+        ${k === 'spray' ? '<p class="hint">環保局戶外環境噴藥（蚊蟲）。對鼠類沒有直接撲殺，預設只假設順帶清理水溝堆積物，承載量小幅暫降。設 0 即完全不影響模型。</p>' : ''}
+        ${['clean', 'fill', 'spray'].includes(k) ? slider(`tasks.${k}.kDrop`, 'task.kDrop', null, k === 'spray' ? null : undefined) + slider(`tasks.${k}.kHalf`, 'task.kHalf', null, k === 'spray' ? null : undefined) : ''}
         ${slider(`tasks.${k}.spill`, 'task.spill')}${slider(`tasks.${k}.ring`, 'task.ring')}</div>`; }).join('')}
       <div class="sgroup"><h4>猛禽二次中毒提示</h4>${slider('raptor.buffer', 'raptor.buffer')}${slider('raptor.sinceYear', 'raptor.sinceYear')}</div>`;
     if (tab === 'reports') return `

@@ -238,6 +238,13 @@ label.btn{display:inline-flex;align-items:center}
 .stag{font-size:.72rem;padding:1px 7px;border-radius:9px;background:#eee8dc}
 .s-active{background:#f3e3c8;color:#8a5a12} .s-done{background:#dcefe2;color:#1f6b3d} .s-cancelled{background:#eee;color:#888}
 .okc{color:var(--accent);font-weight:700}
+.tt-rec{display:flex;align-items:center;gap:5px;font-size:.8rem;color:var(--text-2);white-space:nowrap}
+.tt tr.recurring td{color:var(--text-2);background:#f5fbfa}
+.info{margin-top:10px;background:#eef8f6;border:1px solid #a7d8cf;border-radius:10px;padding:8px 10px;font-size:.78rem;line-height:1.6;color:#0f5e55}
+.info b{display:block;color:#10786c}
+.info .k{display:block;color:var(--text-3);font-size:.7rem}
+.spray-line{margin:0;font-size:.82rem}
+code{font-size:.72rem;background:#eee8dc;padding:0 4px;border-radius:4px}
 .tt td .k{color:var(--text-3);font-size:.74rem}
 body.has-tasktable .taskform,body.has-tasktable .card{max-height:calc(58vh - 96px)}
 @media (max-width:720px){
@@ -302,6 +309,7 @@ body.has-tasktable .taskform,body.has-tasktable .card{max-height:calc(58vh - 96p
     <div class="slider"><span>不透明度</span><input type="range" id="heat-alpha" min="0.2" max="1" step="0.05" value="0.65" aria-label="熱區不透明度"><span id="heat-alpha-v">65%</span></div>
     <div class="row"><label for="t-vfill"><span class="chip" style="background:linear-gradient(90deg,#fac878,#a01423)"></span>里分級著色</label><span class="switch"><input type="checkbox" id="t-vfill"><i></i></span></div>
     <div id="vfill-legend" class="vlegend" hidden></div>
+    <div class="row"><label for="t-spray"><span class="chip" style="background:transparent;box-shadow:inset 0 0 0 2px #10786c"></span>近期定期噴藥的里 <span class="count" id="c-spray"></span></label><span class="switch"><input type="checkbox" id="t-spray"><i></i></span></div>
     <div class="row"><label for="t-vlines"><span class="chip" style="background:#fff;box-shadow:inset 0 0 0 1px #9aa3a8"></span>里界線 <span class="count">456</span></label><span class="switch"><input type="checkbox" id="t-vlines" checked><i></i></span></div>
     <div class="row"><label for="t-sewer"><span class="chip" style="background:#2f86c4"></span>污水管線</label><span class="switch"><input type="checkbox" id="t-sewer"><i></i></span></div>
   </section>
@@ -326,6 +334,13 @@ body.has-tasktable .taskform,body.has-tasktable .card{max-height:calc(58vh - 96p
     <div class="actions"><button class="btn primary" type="button" id="btn-new-task">＋ 新增任務</button>
       <select id="task-filter" aria-label="篩選任務"><option value="open">未結案</option><option value="all">全部</option><option value="planned">規劃中</option><option value="active">執行中</option><option value="done">已完成</option><option value="cancelled">已取消</option></select></div>
     <ul id="task-list" class="task-list"></ul>
+    <section>
+      <h2>定期噴藥（環保局日程）</h2>
+      <p id="spray-info" class="hint"></p>
+      <div class="actions"><label class="btn">匯入日程 JSON<input type="file" id="spray-file" accept=".json,application/json" hidden></label><button class="btn" type="button" id="btn-spray-reset" hidden>還原預載</button></div>
+      <p id="spray-msg" class="hint" role="status"></p>
+      <p class="hint">定期任務為唯讀，不在上方清單顯示；可在任務列表勾選「含定期噴藥」查看。格式與 <code>data/spray_schedule.json</code> 相同（entries：date、code）。</p>
+    </section>
     <div class="actions"><button class="btn" type="button" id="btn-tasktable-2">開啟任務列表</button><button class="btn" type="button" id="btn-audit">匯出稽核紀錄 CSV</button></div>
     <div class="foot">任務可編輯、可取消，不能刪除；每次修改都記錄身分與欄位。已取消的任務不進模型。<br>Demo 的身分只做記錄、不限制權限，紀錄存在本機瀏覽器、可被清除。正式版應接臺北通或公務帳號，依角色授權，稽核紀錄寫入伺服器且不可修改。</div>
   </div>
