@@ -16,6 +16,7 @@ import { themeSelect } from './themes.js';
 import { createPhone } from './phone.js';
 import { createStage } from './demo.js';
 import { createVideo } from './video.js';
+import { createTour } from './tour.js';
 import { PERSONAS } from './params.js';
 import { $, taipeiToday } from './util.js';
 
@@ -178,5 +179,6 @@ async function main() {
   if (DEMO) SCRIPT === 'video' ? app.video = createVideo(app, DEMO) : app.stage = createStage(app, DEMO);
   $('loading').classList.add('done');
   Object.assign(app, { recomputeEnv, recomputeSim, redraw, timeline, applyTimelineVisible, E });
+  app.tour = createTour(app);     // 新手導覽：第一次開啟自動出現，右上「?」可重看
   window.__app = app;
 }

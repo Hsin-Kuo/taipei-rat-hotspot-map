@@ -308,6 +308,32 @@ label.btn{display:inline-flex;align-items:center}
 code{font-size:.72rem;background:#eee8dc;padding:0 4px;border-radius:4px}
 .tt td .k{color:var(--text-3);font-size:.74rem}
 body.has-tasktable .taskform,body.has-tasktable .card{max-height:calc(58vh - 96px)}
+/* 新手導覽：四片遮罩留洞＋外框＋說明卡 */
+.tour{position:fixed;inset:0;z-index:45;pointer-events:none}
+.tour[hidden]{display:none}
+.tour-shade{position:fixed;background:rgba(25,35,45,.48);pointer-events:auto}
+.tour-ring{position:fixed;border-radius:10px;box-shadow:0 0 0 3px #f2a33a,0 0 0 8px rgba(242,163,58,.25);pointer-events:none;transition:left .25s,top .25s,width .25s,height .25s}
+.tour.tour-block .tour-ring{pointer-events:auto}
+.tour-card{position:fixed;pointer-events:auto;width:min(340px,calc(100vw - 24px));background:#fffdf8;color:var(--text);border:1px solid var(--line);border-radius:14px;padding:14px 16px 12px;box-shadow:0 20px 50px rgba(25,35,45,.3);font-size:.86rem;line-height:1.65}
+.tour-card h3{margin:2px 0 6px;font-size:1.05rem;font-weight:900;letter-spacing:.02em}
+.tour-head{display:flex;justify-content:space-between;align-items:center}
+.tour-step{font-size:.72rem;color:var(--text-3);font-variant-numeric:tabular-nums;letter-spacing:.06em}
+.tour-x{font:inherit;font-size:.74rem;color:var(--text-3);background:none;border:0;padding:2px 4px;cursor:pointer;text-decoration:underline}
+.tour-x:hover{color:var(--text)}
+.tour-body p{margin:0 0 8px}
+.tour-body ul,.tour-body ol{margin:0 0 8px;padding-left:1.2em}
+.tour-body li{margin:2px 0}
+.tour-body kbd{font:inherit;font-size:.76rem;background:#fff;border:1px solid var(--line-2);border-radius:4px;padding:0 4px}
+.tour-body a{color:var(--accent);font-weight:700}
+.tour-note{font-size:.76rem;color:var(--text-2);background:#f6efe0;border-radius:8px;padding:5px 8px}
+.tour-dots{display:flex;gap:5px;justify-content:center;margin:6px 0 10px}
+.tour-dots i{width:6px;height:6px;border-radius:50%;background:var(--line-2)}
+.tour-dots i.on{background:var(--accent);width:16px;border-radius:3px}
+.tour-actions{display:flex;justify-content:flex-end;gap:8px}
+.tour-actions .btn:focus-visible,.tour-x:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.tour-in{animation:tour-in .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes tour-in{from{opacity:0;transform:translateY(6px)}}
+@media (prefers-reduced-motion:reduce){.tour-in{animation:none}.tour-ring{transition:none}}
 @media (max-width:720px){
   .tasktable{left:0;right:0;bottom:0;height:60vh;border-radius:14px 14px 0 0}
   .tt-h .tt-q{flex:1 1 100%}
@@ -436,7 +462,7 @@ body.has-tasktable .taskform,body.has-tasktable .card{max-height:calc(58vh - 96p
 <div id="caption" class="caption" hidden></div>
 <div id="video-gate" class="video-gate" hidden><div><b>影片模式</b>先開始螢幕錄影，再按<kbd>空白鍵</kbd>或點擊開始（約 3 分鐘）</div></div>
 <div id="theme-overlay" class="theme-overlay" hidden></div>
-<div id="topbar"><button class="btn tbtn" type="button" id="btn-tasktable" aria-pressed="false">任務列表</button><label class="persona"><span>身分</span><select id="persona" aria-label="目前身分（demo，不限制權限）"></select></label><button class="btn gear" type="button" id="btn-settings" aria-label="設定" title="模型參數設定">⚙</button></div>
+<div id="topbar"><button class="btn tbtn" type="button" id="btn-tasktable" aria-pressed="false">任務列表</button><label class="persona"><span>身分</span><select id="persona" aria-label="目前身分（demo，不限制權限）"></select></label><button class="btn tbtn" type="button" id="btn-tour" aria-label="使用導覽" title="使用導覽">?</button><button class="btn gear" type="button" id="btn-settings" aria-label="設定" title="模型參數設定">⚙</button></div>
 <aside id="settings" class="drawer" aria-label="設定" hidden></aside>
 <section id="tasktable" class="tasktable" aria-label="任務列表" hidden></section>
 <aside id="phone" class="phone" aria-label="臺北通推播（概念示意）" hidden></aside>
