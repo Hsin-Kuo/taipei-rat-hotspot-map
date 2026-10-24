@@ -38,8 +38,8 @@ export function createVideo(app, scenario) {
     stage.pose(stage.HOME.t, stage.HOME.p, 800);
     say('台北環衛模型：衛星影像鋪在真實地形上，紅色是溝鼠族群推估'); await wait(4000);
     say('滾輪縮放、拖曳平移、⌥＋拖曳旋轉');
-    stage.pose([-1.6, 0, 4.6], [-2.6, 6.5, 11], 3000); await wait(3200);
-    await orbit(28, 5000); await orbit(-28, 4000);
+    stage.pose([-1.6, 0, 4.6], [-2.6, 6.5, 11], 1800); await wait(1900);
+    await orbit(20, 2200); await orbit(-20, 1800);
     // 先收起傳統市場、廚餘收受點，再依序打開，讓觀眾看到圖層出現
     stage.setCheck('t-tmarket', false); stage.setCheck('t-recycle', false);
     say('圖層：傳統市場（橘色）、廚餘收受點（粉紅色）');
