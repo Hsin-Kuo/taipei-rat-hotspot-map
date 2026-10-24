@@ -12,6 +12,7 @@ import { createReports } from './reports.js';
 import { createSettings } from './settings.js';
 import { createTaskTable } from './tasktable.js';
 import { createSpray } from './spray.js';
+import { themeSelect } from './themes.js';
 import { PERSONAS } from './params.js';
 import { $, taipeiToday } from './util.js';
 
@@ -145,6 +146,7 @@ async function main() {
   app.taskTable = createTaskTable(app);
   app.newTask = (codes) => tasks.newTask(codes);
   app.openTask = (id) => tasks.openTask(id);
+  themeSelect($('theme'));     // 目前只有鼠類可選，其餘主題顯示「待整合」
   const sel = $('persona');
   sel.innerHTML = PERSONAS.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
   sel.value = app.persona.id;

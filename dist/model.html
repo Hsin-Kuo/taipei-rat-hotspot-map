@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>台北鼠跡模型</title>
-<meta name="description" content="以 Sentinel-2 衛星影像、都市計畫使用分區與內政部 20 m DEM 建成的台北市立體模型，疊上鼠類熱區推估。">
+<title>台北環衛模型</title>
+<meta name="description" content="台北市環境衛生推估與防治任務管理：以衛星影像與真實地形建成的立體模型，目前提供鼠類主題，其他環衛主題待整合。">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%23cfe7f5%27/%3E%3Cpath d=%27M4 25 L12 11 L17 18 L21 13 L28 25 Z%27 fill=%27%234f9145%27/%3E%3Ccircle cx=%2716%27 cy=%2721%27 r=%273%27 fill=%27%23e8402c%27/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -34,6 +34,8 @@ html,body{margin:0;height:100%;overflow:hidden;color:var(--text);font-family:"No
 .eyebrow{font-size:.72rem;letter-spacing:.14em;color:var(--text-3)}
 h1{font-weight:900;font-size:1.8rem;line-height:1.1;margin:4px 0 6px;letter-spacing:.02em}
 h1 em{font-style:normal;color:var(--heat-3)}
+.theme{display:flex;align-items:center;gap:8px;margin:2px 0 8px;font-size:.76rem;color:var(--text-3)}
+.theme select{flex:1;font-weight:700;font-size:.9rem}
 .lede{font-size:.82rem;color:var(--text-2);line-height:1.6;margin:0}
 section{display:flex;flex-direction:column;gap:8px}
 h2{font-size:.76rem;font-weight:700;letter-spacing:.1em;color:var(--text-3);margin:0}
@@ -272,9 +274,10 @@ body.has-tasktable .taskform,body.has-tasktable .card{max-height:calc(58vh - 96p
 
 <aside id="panel" aria-label="控制面板">
   <header>
-    <div class="eyebrow">TAIPEI · 立體模型</div>
-    <h1>台北<em>鼠跡</em>模型</h1>
-    <p class="lede">溝鼠族群推估與防治任務管理：依環境因子推估承載量，再把防治任務與回報放進逐日模型。</p>
+    <div class="eyebrow">TAIPEI · 環境衛生</div>
+    <h1>台北<em>環衛</em>模型</h1>
+    <label class="theme"><span>主題</span><select id="theme" aria-label="環衛主題"></select></label>
+    <p class="lede">依環境因子推估承載量，再把防治任務與回報放進逐日模型。目前提供鼠類主題，其他主題待整合。</p>
   </header>
   <nav class="tabs" role="tablist" aria-label="面板分頁">
     <button role="tab" type="button" data-tab="layers" aria-selected="true" aria-controls="pane-layers">圖層</button>

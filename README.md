@@ -118,7 +118,9 @@ npm run serve                 # http://localhost:3000/model.html
 - 標示：Contains modified Copernicus Sentinel data 2025；臺北市都市計畫使用分區圖（都市發展局，政府資料開放授權條款第 1 版）。
 - 已知限制：臺北市建物 SHP（建管處）只有近年建照約 1 萬筆，不足以還原全市建物量體，目前未擠出建物；國土測繪中心三維建物模型的臺北市部分需向市府申請。
 
-## 防治管理工具（黑客松 MVP，`dist/model.html`）
+## 台北環衛模型：防治管理工具（黑客松 MVP，`dist/model.html`）
+
+頁面名稱為「台北環衛模型」，頂端主題選單目前只有鼠類可用，其他 21 個環衛主題（登革熱病媒蚊、髒亂點、空氣品質等）標示「待整合」，清單與分型見 `dist/js/themes.js`、`docs/mvp-tool-spec.md`。
 
 規格與每項決定見 `docs/mvp-tool-spec.md`。
 
