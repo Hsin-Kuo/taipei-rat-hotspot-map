@@ -43,3 +43,9 @@ export function themeSelect(el, onChange) {
   el.value = 'rat';
   el.addEventListener('change', () => onChange?.(el.value));
 }
+
+// 主題總覽浮層（demo 收尾用；原生下拉選單無法用程式展開）
+export function themeOverviewHtml() {
+  return `<h3>台北環衛模型 · 主題</h3><div class="to-groups">${THEMES.map(g => `<section><h4>${g.group}</h4><ul>${g.items.map(t =>
+    `<li class="${t.ready ? 'ready' : ''}">${t.name}<span>${t.ready ? '已上線' : '待整合'}</span></li>`).join('')}</ul></section>`).join('')}</div>`;
+}
