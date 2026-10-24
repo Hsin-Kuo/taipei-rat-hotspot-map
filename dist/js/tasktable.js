@@ -40,7 +40,7 @@ export function createTaskTable(app) {
 
   function render() {
     if (el.hidden) return;
-    const rs = rows(), editing = app.taskUI?.editing?.id;
+    const rs = rows(), editing = app.taskUI?.current?.id;
     el.querySelector('tbody').innerHTML = rs.length ? rs.map(t => `<tr data-id="${esc(t.id)}" tabindex="0" class="${t.status === 'cancelled' ? 'cancelled' : ''} ${t.recurring ? 'recurring' : ''} ${t.id === editing ? 'on' : ''}">${COLS.map(c => `<td>${c[3](t)}</td>`).join('')}</tr>`).join('')
       : `<tr><td colspan="${COLS.length}" class="muted">${store.tasks.length ? '沒有符合條件的任務' : '尚無任務'}</td></tr>`;
     el.querySelectorAll('th[data-k]').forEach(th => { th.setAttribute('aria-sort', th.dataset.k === st.sort ? (st.dir > 0 ? 'ascending' : 'descending') : 'none'); });

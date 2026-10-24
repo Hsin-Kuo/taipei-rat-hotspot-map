@@ -16,7 +16,7 @@ export function affectedVillages(app, t) {
   return [...[...scope].map(c => [c, '範圍內']), ...[...ring].sort().map(c => [c, '外溢環帶'])];
 }
 
-function executorText(t) {
+export function executorText(t) {
   const x = t.executor || {};
   return x.kind === 'team' ? `${x.team}清潔隊${x.squad ? x.squad : ''}` : x.kind === 'vendor' ? `${x.vendor}（受託廠商）` : x.kind === 'other' ? x.other : EXECUTORS[x.kind] || '';
 }

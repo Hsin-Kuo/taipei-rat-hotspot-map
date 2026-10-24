@@ -1,5 +1,6 @@
-// 防治任務：清單（左側「任務」分頁）＋表單（右側面板）＋稽核紀錄＋猛禽二次中毒提示＋模型預估
-import { TASK_TYPES, BAITS, EXECUTORS, NOTIFY_METHODS, RECURRING_TYPES, clone, normalizeNotify } from './params.js';
+// 防治任務：清單（左側「任務」分頁）＋右側面板（點既有任務先「檢視」，按編輯才進表單；新增直接進表單）＋稽核紀錄＋猛禽提示＋模型預估
+import { TASK_TYPES, BAITS, EXECUTORS, NOTIFY_METHODS, RECURRING_TYPES, clone, normalizeNotify, notifyMethodsText } from './params.js';
+import { executorText } from './notify.js';
 import { STATUS } from './card.js';
 import { TASK_COLORS } from './timeline.js';
 import { store, download } from './store.js';
@@ -16,7 +17,7 @@ const FIELD_LABELS = { caseNo: '案號', type: '類型', 'scope.villages': '範�
 export function createTasks(app) {
   const { G, villages, E } = app;
   const form = $('taskform'), list = $('task-list');
-  let draft = null, isNew = false, previewTimer = 0;
+  let draft = null, isNew = false, mode = 'view', previewTimer = 0;   // mode：view 檢視｜edit 編輯
   const districts = [...new Set(villages.feats.map(f => f.properties.district))];
   const vName = (c) => { const p = villages.props(c); return p ? `${p.district.replace('區', '')} ${p.name}` : c; };
 
@@ -111,8 +112,7 @@ export function createTasks(app) {
       <p id="tf-err" class="err" role="alert"></p>
       <div class="actions">
         <button class="btn primary" type="button" data-act="save">${isNew ? '建立任務' : '儲存修改'}</button>
-        ${isNew ? '' : '<button class="btn" type="button" data-act="notify">通知清單</button>'}
-        ${!isNew && t.status !== 'cancelled' ? '<button class="btn danger" type="button" data-act="cancel">取消任務</button>' : ''}
+        ${isNew ? '' : '<button class="btn" type="button" data-act="discard">放棄修改</button>'}
       </div>
       ${t.history.length ? `<h4>修改紀錄</h4><ol class="hist">${t.history.slice().reverse().map(h => `<li><b>${esc(h.byName)}</b> · ${esc(tpeTime(h.at))}<br><span class="k">${esc(h.summary)}</span></li>`).join('')}</ol>` : ''}`;
     form.hidden = false;
@@ -135,8 +135,7 @@ export function createTasks(app) {
     }));
     form.querySelector('[data-act=close]').addEventListener('click', close);
     form.querySelector('[data-act=save]').addEventListener('click', save);
-    form.querySelector('[data-act=notify]')?.addEventListener('click', () => app.openNotify(store.tasks.find(x => x.id === draft.id)));
-    form.querySelector('[data-act=cancel]')?.addEventListener('click', cancelTask);
+    form.querySelector('[data-act=discard]')?.addEventListener('click', () => openTask(draft.id));
     $('tf-district').addEventListener('change', renderVillageList);
     if (draft.scope.villages[0]) { $('tf-district').value = villages.props(draft.scope.villages[0])?.district || ''; }
     renderVillageList();
@@ -173,6 +172,13 @@ export function createTasks(app) {
     $('tf-chips').innerHTML = vs.map(c => `<span class="sp">${esc(vName(c))}<button type="button" data-rm="${c}" aria-label="移除 ${esc(vName(c))}">×</button></span>`).join('');
     $('tf-chips').querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', () => toggleVillage(b.dataset.rm, false)));
     villages.setScope(vs);
+    renderHints();
+    clearTimeout(previewTimer); previewTimer = setTimeout(preview, 200);
+  }
+
+  // 猛禽二次中毒提示、定期噴藥提醒（檢視與編輯共用，容器 #tf-raptor、#tf-spray）
+  function renderHints() {
+    const vs = draft.scope.villages;
     // 猛禽二次中毒提示（投藥）
     const rb = $('tf-raptor');
     if (draft.type === 'poison' && vs.length) {
@@ -185,7 +191,45 @@ export function createTasks(app) {
     const sp = vs.length && draft.start ? app.spray.near(vs, draft.start, draft.end) : [];
     $('tf-spray').innerHTML = sp.length ? `<div class="info"><b>範圍內有定期噴藥（任務前後 14 天）</b>${sp.slice(0, 8).map(([c, d]) => `${esc(vName(c))} ${d.slice(5)}`).join('、')}${sp.length > 8 ? ` 等 ${sp.length} 筆` : ''}
       <span class="k">可與清潔隊消毒組協調同日進行，或錯開以免重複動員。</span></div>` : '';
-    clearTimeout(previewTimer); previewTimer = setTimeout(preview, 200);
+  }
+
+  // ---------- 檢視 ----------
+  const money = (n) => n == null || n === '' ? '—' : `${(+n).toLocaleString()} 元`;
+  function renderView() {
+    const t = draft, vs = t.scope.villages, days = E.dayOf(t.end || t.start, t.start) + 1;
+    const f = t.followups || {}, fu = (lab, x) => x ? `<li>${lab} ${esc(x.date || '未排定')} ${x.done ? '<span class="okc">✓ 已完成</span>' : '<span class="k">未完成</span>'}</li>` : '';
+    const ex = t.executor || {};
+    const row = (k, v) => v ? `<dt>${k}</dt><dd>${v}</dd>` : '';
+    form.innerHTML = `
+      <header class="card-h"><div><div class="eyebrow">檢視任務 · ${TASK_TYPES[t.type]}</div><h3>${esc(t.caseNo)}</h3><span class="stag s-${t.status}">${STATUS[t.status]}</span></div><button class="x" type="button" data-act="close" aria-label="關閉">×</button></header>
+      <dl class="tview">
+        ${row('期間', `${esc(t.start)} ～ ${esc(t.end || t.start)}（${days} 天）`)}
+        ${row('範圍', `${vs.length} 里：${vs.map(c => esc(vName(c))).join('、')}`)}
+        ${row('執行單位', esc(executorText(t)) + (ex.kind === 'vendor' && ex.contract ? `<span class="k">合約 ${esc(ex.contract)}</span>` : ''))}
+        ${t.type === 'poison' ? row('藥劑', `${esc((BAITS[t.bait?.kind] || '—').replace(/（.*）/, ''))}${t.bait?.points ? `，${t.bait.points} 處` : ''}`) : ''}
+        ${row('配套措施', `<ul class="plain">${fu('鼠屍清理', f.carcass)}${t.type === 'poison' ? fu('殘餘藥物回收', f.residue) : ''}</ul>`)}
+        ${row('經費', `預算 ${money(t.budget?.planned)}　實支 ${money(t.budget?.actual)}`)}
+        ${row('民眾通知', t.notify?.enabled ? `${esc(notifyMethodsText(t))} · ${esc(t.notify.date || '')}` : '不通知')}
+        ${row('備註', t.note ? esc(t.note) : '')}
+        ${row('建立', t.createdByName ? `${esc(t.createdByName)} · ${esc(tpeTime(t.createdAt))}` : '')}
+      </dl>
+      <div id="tf-raptor"></div>
+      <div id="tf-spray"></div>
+      <div id="tf-preview" class="preview"></div>
+      <div class="actions">
+        <button class="btn primary" type="button" data-act="edit">編輯</button>
+        <button class="btn" type="button" data-act="notify">通知清單</button>
+        ${t.status !== 'cancelled' ? '<button class="btn danger" type="button" data-act="cancel">取消任務</button>' : ''}
+      </div>
+      ${t.history?.length ? `<h4>修改紀錄</h4><ol class="hist">${t.history.slice().reverse().map(h => `<li><b>${esc(h.byName)}</b> · ${esc(tpeTime(h.at))}<br><span class="k">${esc(h.summary)}</span></li>`).join('')}</ol>` : ''}`;
+    form.hidden = false;
+    form.querySelector('[data-act=close]').addEventListener('click', close);
+    form.querySelector('[data-act=edit]').addEventListener('click', () => { mode = 'edit'; renderForm(); renderList(); });
+    form.querySelector('[data-act=notify]').addEventListener('click', () => app.openNotify(store.tasks.find(x => x.id === draft.id)));
+    form.querySelector('[data-act=cancel]')?.addEventListener('click', cancelTask);
+    villages.setScope(vs);
+    renderHints();
+    clearTimeout(previewTimer); previewTimer = setTimeout(preview, 50);
   }
 
   // 模型預估：把草稿加進任務清單試算，比較範圍與外溢環帶的族群指數
@@ -250,8 +294,8 @@ export function createTasks(app) {
     }
     store.upsertTask(t);
     const created = isNew;
-    draft = clone(t); isNew = false;
-    app.recomputeSim(); renderList(); renderForm();
+    draft = clone(t); isNew = false; mode = 'view';     // 儲存後回到檢視
+    app.recomputeSim(); renderList(); renderView();
     if (created && t.notify.enabled) app.openNotify(t);
   }
 
@@ -259,15 +303,15 @@ export function createTasks(app) {
     if (!confirm(`取消任務 ${draft.caseNo}？取消後不進模型，但保留紀錄，無法刪除。`)) return;
     const t = clone(store.tasks.find(x => x.id === draft.id));
     t.status = 'cancelled'; stamp(t, 'cancel', [['status', draft.status, 'cancelled']]);
-    store.upsertTask(t); draft = clone(t);
-    app.recomputeSim(); renderList(); renderForm();
+    store.upsertTask(t); draft = clone(t); mode = 'view';
+    app.recomputeSim(); renderList(); renderView();
   }
 
   function open(t, fresh) {
-    draft = normalizeNotify(clone(t)); isNew = fresh;
+    draft = normalizeNotify(clone(t)); isNew = fresh; mode = fresh ? 'edit' : 'view';
     draft.history ||= [];
     app.selectVillage(null);
-    renderForm(); renderList();
+    fresh ? renderForm() : renderView(); renderList();
     app.setTab('tasks');
   }
   function newTask(codes) { open(newDraft(codes), true); }
@@ -283,5 +327,6 @@ export function createTasks(app) {
   });
 
   renderList();
-  return { newTask, openTask, close, toggleVillage, renderList, get editing() { return draft; } };
+  // editing：只有編輯狀態才回傳（地圖點里會改範圍）；current：目前開啟的任務（列表反白用）
+  return { newTask, openTask, close, toggleVillage, renderList, get editing() { return mode === 'edit' ? draft : null; }, get current() { return draft; } };
 }
