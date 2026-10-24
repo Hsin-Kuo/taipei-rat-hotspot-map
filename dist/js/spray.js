@@ -32,7 +32,7 @@ export function createSpray(app, preloaded) {
       return { id: `spray-${e.date}-${e.code}`, caseNo: `定期-${e.date.slice(2).replace(/-/g, '')}-${e.code.slice(-3)}`, type: 'spray', recurring: true,
         status: d < 0 ? 'done' : d === 0 ? 'active' : 'planned', scope: { type: 'villages', villages: [e.code], geometry: null },
         start: e.date, end: e.date, executor: { kind: 'team', team: villages.props(e.code)?.district || e.district },
-        createdByName: '環保局日程表', source: e.source, notify: { enabled: true, method: 'board', date: E.isoOf(d - 2, app.today) } };
+        createdByName: '環保局日程表', source: e.source, notify: { enabled: true, methods: ['board'], date: E.isoOf(d - 2, app.today) } };
     });
   }
   index();

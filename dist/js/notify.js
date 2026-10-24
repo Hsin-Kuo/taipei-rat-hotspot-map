@@ -1,5 +1,5 @@
 // 民眾通知清單：範圍內＋外溢環帶經過的里、里長聯絡（使用者匯入）、公告稿範本；只產生與匯出，不實際發送
-import { TASK_TYPES, BAITS, EXECUTORS, NOTIFY_METHODS } from './params.js';
+import { TASK_TYPES, BAITS, EXECUTORS, notifyMethodsText } from './params.js';
 import { store, download } from './store.js';
 import { $, esc } from './util.js';
 
@@ -52,7 +52,7 @@ export function openNotify(app, t) {
       <p class="ncount muted"></p>
       <div class="ntable-wrap"><table class="ntable"><thead><tr><th>區</th><th>里</th><th>關係</th><th>里長</th><th>電話</th></tr></thead><tbody></tbody></table></div>
       <p class="hint">里長姓名與電話目前沒有開放資料，可匯入 CSV（欄位：村里代碼,里長,電話；或 區,里,里長,電話）。資料只存在本機瀏覽器。</p>
-      <h4>公告稿範本 <span class="count">${esc(NOTIFY_METHODS[t.notify?.method] || '')}${t.notify?.date ? ' · ' + esc(t.notify.date) : ''}</span></h4>
+      <h4>公告稿範本 <span class="count">${esc(notifyMethodsText(t))}${t.notify?.date ? ' · ' + esc(t.notify.date) : ''}</span></h4>
       <textarea class="ntext" rows="8">${esc(text)}</textarea>
       <div class="actions">
         <button class="btn" type="button" data-act="csv">匯出通知清單 CSV</button>

@@ -1,5 +1,5 @@
 // 任務列表：底部全寬抽屜，可搜尋、篩選、排序、匯出；點一列開啟任務表單
-import { TASK_TYPES, EXECUTORS, NOTIFY_METHODS } from './params.js';
+import { TASK_TYPES, EXECUTORS, notifyMethodsText } from './params.js';
 import { STATUS } from './card.js';
 import { TASK_COLORS } from './timeline.js';
 import { store, download } from './store.js';
@@ -25,7 +25,7 @@ export function createTaskTable(app) {
     ['executor', '執行單位', t => executor(t), t => esc(executor(t))],
     ['budget', '經費（預算／實支）', t => t.budget?.actual ?? t.budget?.planned ?? -1, t => `${money(t.budget?.planned) || '—'}／${money(t.budget?.actual) || '—'}`],
     ['follow', '配套', t => { const [a, b] = followups(t); return b ? a / b : -1; }, t => { const [a, b] = followups(t); return b ? `<span class="${a === b ? 'okc' : ''}">${a}/${b}</span>` : '—'; }],
-    ['notify', '民眾通知', t => t.notify?.enabled ? t.notify.date || '' : '', t => t.notify?.enabled ? `${esc(NOTIFY_METHODS[t.notify.method]?.replace(/（.*）/, '') || '')} ${esc((t.notify.date || '').slice(5))}` : '不通知'],
+    ['notify', '民眾通知', t => t.notify?.enabled ? t.notify.date || '' : '', t => t.notify?.enabled ? `${esc(notifyMethodsText(t))} ${esc((t.notify.date || '').slice(5))}` : '不通知'],
     ['status', '狀態', t => ['planned', 'active', 'done', 'cancelled'].indexOf(t.status), t => `<span class="stag s-${t.status}">${STATUS[t.status]}</span>`],
     ['createdBy', '建立者', t => t.createdByName || '', t => esc(t.createdByName || '')],
     ['updatedAt', '最後修改', t => t.updatedAt || '', t => { const h = t.history?.at(-1); return h ? `${esc(tpe(h.at))} <span class="k">${esc(h.byName)}</span>` : ''; }],
@@ -72,7 +72,7 @@ export function createTaskTable(app) {
   el.querySelector('[data-act=csv]').addEventListener('click', () => {
     const cell = (v) => { v = String(v ?? ''); if (/^[=+\-@]/.test(v)) v = "'" + v; return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
     const head = ['案號', '類型', '開始', '結束', '範圍', '村里代碼', '執行單位', '合約編號', '預算', '實際支出', '配套完成', '民眾通知', '狀態', '建立者', '備註'];
-    const body = rows().map(t => { const [a, b] = followups(t); return [t.caseNo, TASK_TYPES[t.type], t.start, t.end, (t.scope?.villages || []).map(vName).join('、'), (t.scope?.villages || []).join(' '), executor(t), t.executor?.contract, t.budget?.planned, t.budget?.actual, b ? `${a}/${b}` : '', t.notify?.enabled ? `${NOTIFY_METHODS[t.notify.method] || ''} ${t.notify.date || ''}` : '不通知', STATUS[t.status], t.createdByName, t.note]; });
+    const body = rows().map(t => { const [a, b] = followups(t); return [t.caseNo, TASK_TYPES[t.type], t.start, t.end, (t.scope?.villages || []).map(vName).join('、'), (t.scope?.villages || []).join(' '), executor(t), t.executor?.contract, t.budget?.planned, t.budget?.actual, b ? `${a}/${b}` : '', t.notify?.enabled ? `${notifyMethodsText(t)} ${t.notify.date || ''}` : '不通知', STATUS[t.status], t.createdByName, t.note]; });
     download(`任務列表_${app.today}.csv`, '﻿' + [head, ...body].map(r => r.map(cell).join(',')).join('\r\n'), 'text/csv;charset=utf-8');
   });
 

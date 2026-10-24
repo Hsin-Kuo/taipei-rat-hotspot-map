@@ -1,5 +1,5 @@
 // 防治任務：清單（左側「任務」分頁）＋表單（右側面板）＋稽核紀錄＋猛禽二次中毒提示＋模型預估
-import { TASK_TYPES, BAITS, EXECUTORS, NOTIFY_METHODS, RECURRING_TYPES, clone } from './params.js';
+import { TASK_TYPES, BAITS, EXECUTORS, NOTIFY_METHODS, RECURRING_TYPES, clone, normalizeNotify } from './params.js';
 import { STATUS } from './card.js';
 import { TASK_COLORS } from './timeline.js';
 import { store, download } from './store.js';
@@ -11,7 +11,7 @@ const set = (o, path, v) => { const ks = path.split('.'), last = ks.pop(); let a
 const flat = (o, pre = '', out = {}) => { for (const [k, v] of Object.entries(o || {})) { if (['history', 'updatedAt', 'updatedBy'].includes(k)) continue; const p = pre ? pre + '.' + k : k; if (v && typeof v === 'object' && !Array.isArray(v)) flat(v, p, out); else out[p] = Array.isArray(v) ? v.join(',') : v; } return out; };
 const FIELD_LABELS = { caseNo: '案號', type: '類型', 'scope.villages': '範圍', start: '開始', end: '結束', status: '狀態', 'executor.kind': '執行單位', 'executor.team': '清潔隊', 'executor.squad': '分隊', 'executor.vendor': '廠商', 'executor.contract': '合約編號', 'executor.other': '其他單位',
   'bait.kind': '藥劑', 'bait.points': '投藥點數', 'followups.carcass.date': '鼠屍清理日', 'followups.carcass.done': '鼠屍清理完成', 'followups.residue.date': '藥物回收日', 'followups.residue.done': '藥物回收完成',
-  'budget.planned': '預算', 'budget.actual': '實際支出', 'notify.enabled': '通知民眾', 'notify.method': '通知方式', 'notify.date': '通知日期', note: '備註' };
+  'budget.planned': '預算', 'budget.actual': '實際支出', 'notify.enabled': '通知民眾', 'notify.methods': '通知方式', 'notify.date': '通知日期', note: '備註' };
 
 export function createTasks(app) {
   const { G, villages, E } = app;
@@ -32,7 +32,7 @@ export function createTasks(app) {
       bait: { kind: 'sgar', points: null },
       followups: { carcass: { date: E.isoOf(7, app.today), done: false }, residue: { date: E.isoOf(13, app.today), done: false } },
       budget: { planned: null, actual: null },
-      notify: { enabled: true, method: 'board', date: E.isoOf(-3, app.today) },
+      notify: { enabled: true, methods: ['board'], date: E.isoOf(-3, app.today) },
       note: '', history: [], autoDates: true,
     };
   }
@@ -101,7 +101,7 @@ export function createTasks(app) {
       <h4>民眾通知</h4>
       <div class="fgrid">
         <label class="chk full">${inp('notify.enabled', 'checkbox')}通知範圍內與外溢環帶的里</label>
-        <label data-when="notify.enabled">方式<select data-f="notify.method">${opt(NOTIFY_METHODS, t.notify.method)}</select></label>
+        <fieldset class="full methods" data-when="notify.enabled"><legend>方式（可多選）</legend>${Object.entries(NOTIFY_METHODS).map(([k, v]) => `<label class="chk"><input type="checkbox" data-m="${k}" ${t.notify.methods.includes(k) ? 'checked' : ''}>${v}</label>`).join('')}</fieldset>
         <label data-when="notify.enabled">通知日期${inp('notify.date', 'date')}</label>
       </div>
       <h4>狀態與備註</h4>
@@ -129,6 +129,9 @@ export function createTasks(app) {
         for (const q of ['notify.date', 'followups.carcass.date', 'followups.residue.date']) { const el2 = form.querySelector(`[data-f="${q}"]`); if (el2) el2.value = get(draft, q); }
       }
       refresh();
+    }));
+    form.querySelectorAll('[data-m]').forEach(cb => cb.addEventListener('change', () => {
+      draft.notify.methods = Object.keys(NOTIFY_METHODS).filter(k => form.querySelector(`[data-m="${k}"]`).checked);   // 依固定順序，方便比對
     }));
     form.querySelector('[data-act=close]').addEventListener('click', close);
     form.querySelector('[data-act=save]').addEventListener('click', save);
@@ -214,6 +217,7 @@ export function createTasks(app) {
     if (!t.start) errs.push('請填開始日期');
     if (t.end && t.end < t.start) errs.push('結束日期早於開始日期');
     if (t.executor.kind === 'vendor' && !t.executor.vendor.trim()) errs.push('請填廠商名稱');
+    if (t.notify.enabled && !t.notify.methods.length) errs.push('請至少選一種通知方式');
     return errs;
   }
 
@@ -224,8 +228,10 @@ export function createTasks(app) {
     if (action === 'create') { t.createdBy = who.id; t.createdByName = who.name; t.createdAt = t.history.at(-1).at; }
     t.updatedAt = t.history.at(-1).at; t.updatedBy = who.id;
   }
-  const ENUMS = { status: STATUS, type: TASK_TYPES, 'executor.kind': EXECUTORS, 'bait.kind': BAITS, 'notify.method': NOTIFY_METHODS };
-  const fmtField = (p, v) => p === 'scope.villages' ? (v ? String(v).split(',').map(vName).join('、') : '') : ENUMS[p]?.[v]?.replace(/（.*）/, '') ?? v;
+  const ENUMS = { status: STATUS, type: TASK_TYPES, 'executor.kind': EXECUTORS, 'bait.kind': BAITS };
+  const fmtField = (p, v) => p === 'scope.villages' ? (v ? String(v).split(',').map(vName).join('、') : '')
+    : p === 'notify.methods' ? (v ? String(v).split(',').map(m => (NOTIFY_METHODS[m] || m).replace(/（.*）/, '')).join('、') : '')
+    : ENUMS[p]?.[v]?.replace(/（.*）/, '') ?? v;
   const fmt = (v) => v === '' || v == null ? '（空）' : v === true ? '是' : v === false ? '否' : String(v).length > 40 ? String(v).slice(0, 40) + '…' : v;
   const tpeTime = (iso) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Taipei', dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso));
 
@@ -237,7 +243,7 @@ export function createTasks(app) {
     const t = clone(draft); delete t.autoDates;
     if (isNew) stamp(t, 'create', []);
     else {
-      const prev = store.tasks.find(x => x.id === t.id), a = flat(prev), b = flat(t);
+      const prev = normalizeNotify(clone(store.tasks.find(x => x.id === t.id))), a = flat(prev), b = flat(t);
       const changes = [...new Set([...Object.keys(a), ...Object.keys(b)])].filter(k => a[k] !== b[k] && !k.startsWith('created')).map(k => [k, a[k] ?? null, b[k] ?? null]);
       if (!changes.length) { $('tf-err').textContent = '沒有變更'; return; }
       stamp(t, 'edit', changes);
@@ -258,7 +264,7 @@ export function createTasks(app) {
   }
 
   function open(t, fresh) {
-    draft = clone(t); isNew = fresh;
+    draft = normalizeNotify(clone(t)); isNew = fresh;
     draft.history ||= [];
     app.selectVillage(null);
     renderForm(); renderList();

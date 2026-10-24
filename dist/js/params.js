@@ -93,3 +93,7 @@ export const PERSONAS = [
 ];
 export const EXECUTORS = { team: '區清潔隊', vector: '環保局水質病媒管制科', market: '市場處', vendor: '外包除鼠公司', other: '其他' };
 export const NOTIFY_METHODS = { board: '里辦公處公告', flyer: '張貼公告／傳單', sms: '簡訊', app: '臺北通推播（規劃中）' };
+// 民眾通知方式（可多選）；舊資料為單一字串 notify.method，讀取時轉成陣列
+export const notifyMethods = (t) => t?.notify?.methods ?? (t?.notify?.method ? [t.notify.method] : []);
+export const notifyMethodsText = (t, sep = '、') => notifyMethods(t).map(m => (NOTIFY_METHODS[m] || m).replace(/（.*）/, '')).join(sep);
+export function normalizeNotify(t) { if (t?.notify && !t.notify.methods) { t.notify.methods = notifyMethods(t); delete t.notify.method; } return t; }
