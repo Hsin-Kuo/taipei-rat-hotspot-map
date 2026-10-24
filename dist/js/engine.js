@@ -156,23 +156,31 @@ export function simulate(G, env, P, tasks, todayIso, range = [-90, 30], geoCache
 
 // ---------- 回報加成 ----------
 // P.reports = { base, half, radius, evidence: {live, dead, droppings, gnaw, burrow}, species: ['norway'] }
+// 單筆回報：振幅（不含時間衰減；非模型鼠種回傳 0）與影響的格子 [[m, 距離權重], …]
+export function reportAmp(P, rp) {
+  const pr = P.reports;
+  return pr.species.includes(rp.species) ? pr.base * (rp.confidence ?? 1) * (pr.evidence[rp.evidence] ?? 1) : 0;
+}
+export const reportDecay = (P, age) => age < 0 ? 0 : Math.exp(-Math.LN2 * age / Math.max(1, P.reports.half));
+export function reportCells(G, P, rp) {
+  const rc = P.reports.radius / G.cell, rr = Math.ceil(rc), out = [];
+  const [fi, fj] = G.fij(rp.lon, rp.lat);
+  const ci = Math.floor(fi), cj = Math.floor(fj);
+  for (let dj = -rr; dj <= rr; dj++) for (let di = -rr; di <= rr; di++) {
+    const i = ci + di, j = cj + dj; if (i < 0 || j < 0 || i >= G.nx || j >= G.ny) continue;
+    const m = G.cellIdx[j * G.nx + i]; if (m < 0) continue;
+    const dist = Math.hypot(i + .5 - fi, j + .5 - fj);
+    if (dist <= rc + .5) out.push([m, Math.max(0, 1 - dist / (rc + .5))]);
+  }
+  return out;
+}
+
 export function reportBoost(G, P, reports, day, todayIso) {
-  const out = new Float32Array(G.M), pr = P.reports;
-  const rc = pr.radius / G.cell, rr = Math.ceil(rc);
+  const out = new Float32Array(G.M);
   for (const rp of reports) {
-    if (!pr.species.includes(rp.species)) continue;
-    const age = day - dayOf(rp.time, todayIso);
-    if (age < 0) continue;
-    const amp = pr.base * (rp.confidence ?? 1) * (pr.evidence[rp.evidence] ?? 1) * Math.exp(-Math.LN2 * age / Math.max(1, pr.half));
+    const amp = reportAmp(P, rp) * reportDecay(P, day - dayOf(rp.time, todayIso));
     if (amp < 0.05) continue;
-    const [fi, fj] = G.fij(rp.lon, rp.lat);
-    const ci = Math.floor(fi), cj = Math.floor(fj);
-    for (let dj = -rr; dj <= rr; dj++) for (let di = -rr; di <= rr; di++) {
-      const i = ci + di, j = cj + dj; if (i < 0 || j < 0 || i >= G.nx || j >= G.ny) continue;
-      const m = G.cellIdx[j * G.nx + i]; if (m < 0) continue;
-      const dist = Math.hypot(i + .5 - fi, j + .5 - fj);
-      if (dist <= rc + .5) out[m] += amp * Math.max(0, 1 - dist / (rc + .5));
-    }
+    for (const [m, w] of reportCells(G, P, rp)) out[m] += amp * w;
   }
   return out;
 }

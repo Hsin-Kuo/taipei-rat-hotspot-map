@@ -6,10 +6,18 @@ import { $, esc } from './util.js';
 
 export const STATUS = { planned: '規劃中', active: '執行中', done: '已完成', cancelled: '已取消' };
 
-// 該里每日平均族群（不含回報加成）
+// 該里每日平均估計值 = 族群 N ＋ 回報加成（與地圖、上方數字同一算法；只算本里的格子，播放時重畫也夠快）
 function series(app, k) {
-  const { G, sim } = app, ms = G.vCells[k], out = new Float32Array(sim.nd);
-  for (let d = 0; d < sim.nd; d++) { let s = 0; const o = d * G.M; for (const m of ms) s += sim.N[o + m]; out[d] = s / ms.length; }
+  const { G, sim, E } = app, ms = G.vCells[k], inV = new Set(ms), out = new Float32Array(sim.nd);
+  for (let d = 0; d < sim.nd; d++) { let s = 0; const o = d * G.M; for (const m of ms) s += sim.N[o + m]; out[d] = s; }
+  for (const rp of app.reports) {
+    const amp0 = E.reportAmp(app.params, rp); if (!amp0) continue;
+    let w = 0; for (const [m, x] of E.reportCells(G, app.params, rp)) if (inV.has(m)) w += x;
+    if (!w) continue;
+    const t = E.dayOf(rp.time, app.today);
+    for (let d = Math.max(0, t - sim.d0); d < sim.nd; d++) { const amp = amp0 * E.reportDecay(app.params, sim.d0 + d - t); if (amp < 0.05) break; out[d] += amp * w; }
+  }
+  for (let d = 0; d < sim.nd; d++) out[d] /= ms.length;
   return out;
 }
 
@@ -23,7 +31,7 @@ function spark(app, vals, base) {
     <path d="${d}" class="spark-line"/>
     <line x1="${x(cur)}" x2="${x(cur)}" y1="0" y2="${H}" class="spark-cur"/>
   </svg>
-  <div class="spark-axis"><span>${isoOf(app.sim.d0, app.today).slice(5)}</span><span>虛線 = 環境基準 ${base.toFixed(0)}</span><span>${isoOf(app.sim.d0 + app.sim.nd - 1, app.today).slice(5)}</span></div>`;
+  <div class="spark-axis"><span>${isoOf(app.sim.d0, app.today).slice(5)}</span><span>族群＋回報加成；虛線 = 環境基準 ${base.toFixed(0)}</span><span>${isoOf(app.sim.d0 + app.sim.nd - 1, app.today).slice(5)}</span></div>`;
 }
 
 export function renderCard(app, code) {
@@ -45,7 +53,7 @@ export function renderCard(app, code) {
       <button class="x" type="button" aria-label="關閉">×</button></header>
     <div class="kpis">
       <div><span class="kpi-v">${vVal.toFixed(0)}</span><span class="kpi-l">族群指數</span></div>
-      <div><span class="lvl" style="background:${CLASS_COLORS.index[cls]}">${CLASS_LABELS.index[cls]}</span><span class="kpi-l">等級</span></div>
+      <div><span class="lvl" style="background:${CLASS_COLORS.index[cls]};color:${cls >= 4 ? '#fff' : 'inherit'}">${CLASS_LABELS.index[cls]}</span><span class="kpi-l">等級</span></div>
       <div><span class="kpi-v ${delta < -0.5 ? 'down' : delta > 0.5 ? 'up' : ''}">${delta > 0 ? '+' : ''}${delta.toFixed(0)}</span><span class="kpi-l">與環境基準差</span></div>
     </div>
     <div class="card-date">${isoOf(app.day, app.today)}${app.day > 0 ? '（預測）' : ''}</div>
