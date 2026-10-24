@@ -50,7 +50,7 @@ export function createReports(app) {
       M.makeScale(s, s, s).setPosition(p); markers.setMatrixAt(k, M);
       markers.setColorAt(k, col.setHex(SPECIES_COLORS[r.species]));
     });
-    markers.userData = { key: 'reports', items: rs, info: (r) => [`${SPECIES[r.species]}回報 · ${EVIDENCE[r.evidence]}`, `${esc(r.time.replace('T', ' ').slice(0, 16))} · ${r.count} 隻 · 信心 ${Math.round(r.confidence * 100)}%`, r.simulated ? '模擬資料' : `匯入：${esc(r.source)}`] };
+    markers.userData = { key: 'reports', items: rs, info: (r) => [`${SPECIES[r.species]}回報 · ${EVIDENCE[r.evidence]}`, `${r.time.replace('T', ' ').slice(0, 16)} · ${r.count} 隻 · 信心 ${Math.round(r.confidence * 100)}%`, r.simulated ? '模擬資料' : `匯入：${r.source}`] };
     scene.scene.add(markers); scene.groups.reports = [markers];
     renderSummary(rs);
   }

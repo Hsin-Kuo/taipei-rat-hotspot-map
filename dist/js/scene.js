@@ -7,6 +7,7 @@ import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { esc } from './util.js';
 const $ = (id) => document.getElementById(id);
 const P = new URLSearchParams(location.search);
 const STEP = Math.max(1, +P.get('step') || 1);     // 網格取樣步距（高度圖像素），1 ≈ 30 m
@@ -142,7 +143,7 @@ export async function createScene() {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)); renderer.setSize(innerWidth, innerHeight); renderer.setClearColor(0x000000, 0);
   renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1.05;
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.enabled = false;   // 地形陰影已移除（使用者決定）；山影保留在衛星影像本身
   topTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
   $('stage').appendChild(renderer.domElement);
   const labelR = new CSS2DRenderer({ element: $('labels') }); labelR.setSize(innerWidth, innerHeight);
@@ -153,8 +154,7 @@ export async function createScene() {
   // 太陽方向對齊衛星拍攝時間（1 月上午約 10:30，方位東南偏南、仰角約 38°），即時陰影與影像中的山影一致
   const sun = new THREE.DirectionalLight(0xfff0d8, 2.3);
   { const az = THREE.MathUtils.degToRad(150), el = THREE.MathUtils.degToRad(38), r = 30; sun.position.set(Math.sin(az) * Math.cos(el) * r, Math.sin(el) * r, -Math.cos(az) * Math.cos(el) * r); }
-  sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096); Object.assign(sun.shadow.camera, { left: -18, right: 18, top: 18, bottom: -18, near: 1, far: 90 });
-  sun.shadow.bias = -0.0003; sun.shadow.normalBias = 0.03; sun.shadow.radius = 3; scene.add(sun, sun.target);
+  scene.add(sun, sun.target);
 
   const topMesh = new THREE.Mesh(model.top, new THREE.MeshStandardMaterial({ map: topTex, roughness: .95, metalness: 0 }));
   topMesh.castShadow = topMesh.receiveShadow = true; scene.add(topMesh);
@@ -181,6 +181,30 @@ export async function createScene() {
   pins('market', markets, d => [d.lon, d.lat], 0xf2b705, d => [d.name, `攤販集中場 · ${d.district} · ${d.range}`, `營業 ${d.days} ${d.hours}`]);
   pins('tmarket', tmarkets, d => [d.lon, d.lat], 0xf08a24, d => [d.name, `傳統市場 · ${d.addr}`]);
   pins('recycle', recycle, d => [d.lon, d.lat], 0xe5559a, d => [`${d.team} 限時收受點`, d.addr, d.hours]);
+  // 小圓點圖層（數量多：餐飲業者 2.5 萬、垃圾車停靠點 3.9 千）；第一次打開時才下載與建立
+  const dotGeo = new THREE.OctahedronGeometry(.008, 0);   // 半徑約 8 m、8 面，2.5 萬個也只有 20 萬三角形
+  function dots(key, items, lonlat, color, info, scale = () => 1) {
+    const mesh = new THREE.InstancedMesh(dotGeo, new THREE.MeshStandardMaterial({ color, roughness: .6, emissive: color, emissiveIntensity: .2 }), items.length);
+    const M = new THREE.Matrix4();
+    items.forEach((d, k) => { const [lon, lat] = lonlat(d), s = scale(d), p = surf(lon, lat); p.y += .012 * s; M.makeScale(s, s, s).setPosition(p); mesh.setMatrixAt(k, M); });
+    mesh.computeBoundingSphere();
+    mesh.userData = { key, items, info }; scene.add(mesh); groups[key] = [mesh];
+    if ($('c-' + key)) $('c-' + key).textContent = items.length.toLocaleString();
+  }
+  const DOT_LAYERS = {
+    food: () => J('food.json').then(rows => dots('food', rows, d => [d[0], d[1]], 0xc2662d,
+      // [lon, lat, 店數, 代表店名, 行業類別, 評核等級, 地址]
+      d => [d[3] || '餐飲業者', `${d[4] || '餐飲業'} · 此門牌 ${d[2]} 家`, ...(d[5] ? [`衛生評核 ${d[5]}`] : []), d[6]], d => Math.min(1.8, Math.sqrt(d[2])))),
+    garbage: () => J('garbage_stops.json').then(rows => dots('garbage', rows, d => [d[0], d[1]], 0x4f7a3a,
+      // [lon, lat, 車次, 地點, 行政區]
+      d => [d[3] || '垃圾車停靠點', `垃圾車停靠點 · ${d[4]}`, `${d[2]} 車次`])),
+  };
+  async function showDots(key, on) {
+    if (!groups[key]) { if (!on) return; await DOT_LAYERS[key](); }
+    groups[key].forEach(o => o.visible = on);
+  }
+  for (const k of Object.keys(DOT_LAYERS)) $('t-' + k).addEventListener('change', e => showDots(k, e.target.checked).catch(err => { e.target.checked = false; console.error(err); }));
+
   groups.foodwaste = fw.nodes.map(n => {
     const col = n.status === '嚴重' ? 0xd7263d : n.status === '已改善' ? 0x3a9d5d : 0xe57a1f;
     const r = .12 + .012 * Math.sqrt(n.tons);
@@ -259,7 +283,8 @@ export async function createScene() {
     if (!r) { setHover(null); tip.style.display = 'none'; renderer.domElement.style.cursor = ''; return; }
     if (custom) { setHover(null); tip.innerHTML = custom; }
     else if (r.kind === 'dist') { setHover(r.di); const p = r.di.f.properties; tip.innerHTML = `<b>${p.name}</b><span class="k">${p.li} 里 · ${p.areaKm2} km²</span>`; }
-    else { setHover(null); tip.innerHTML = `<b>${r.lines[0]}</b>` + r.lines.slice(1).map(s => `<span class="k">${s}</span>`).join('<br>'); }
+    // 地點資訊來自外部資料，一律跳脫
+    else { setHover(null); tip.innerHTML = `<b>${esc(r.lines[0])}</b>` + r.lines.slice(1).map(s => `<span class="k">${esc(s)}</span>`).join('<br>'); }
     renderer.domElement.style.cursor = 'pointer'; tip.style.display = 'block';
     const w = tip.offsetWidth, h = tip.offsetHeight;
     tip.style.left = Math.min(e.clientX + 14, innerWidth - w - 8) + 'px'; tip.style.top = (e.clientY + 14 + h > innerHeight ? e.clientY - h - 14 : e.clientY + 14) + 'px';
@@ -280,7 +305,6 @@ export async function createScene() {
   $('heat-alpha').addEventListener('input', e => { show.heatAlpha = +e.target.value; $('heat-alpha-v').textContent = Math.round(show.heatAlpha * 100) + '%'; paintTop(); });
   for (const k of ['market', 'tmarket', 'recycle', 'foodwaste']) bind('t-' + k, v => groups[k].forEach(o => o.visible = v));
   bind('t-labels', v => distInfo.forEach(d => d.lab.visible = v));
-  bind('t-shadow', v => { sun.castShadow = v; renderer.shadowMap.needsUpdate = true; });
 
   // ---------- 尺寸與迴圈 ----------
   function resize() {
@@ -288,7 +312,6 @@ export async function createScene() {
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); lineMats.forEach(m => m.resolution.set(innerWidth, innerHeight));
   }
   addEventListener('resize', resize); resize();
-  renderer.shadowMap.needsUpdate = true;   // 場景靜態：陰影只算一次（切換陰影時重算）
 
   const ease = t => 1 - Math.pow(1 - t, 3);
   let frames = 0, fpsT = performance.now(), fps = 0;
